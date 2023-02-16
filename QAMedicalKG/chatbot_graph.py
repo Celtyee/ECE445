@@ -3,6 +3,8 @@ from question_parser import *
 from answer_search import *
 
 '''问答类'''
+
+
 class ChatBotGraph:
     def __init__(self):
         self.classifier = QuestionClassifier()
@@ -21,10 +23,10 @@ class ChatBotGraph:
         else:
             return '\n'.join(final_answers)
 
+
 if __name__ == '__main__':
     handler = ChatBotGraph()
     while 1:
         question = input('咨询:')
         answer = handler.chat_main(question)
         print('客服机器人:', answer)
-

@@ -234,7 +234,7 @@ class MedicalGraph:
                 print(rel_type, count, all)
             except Exception as e:
                 print(e)
-        return
+        return set_edges
 
     '''导出数据'''
 
