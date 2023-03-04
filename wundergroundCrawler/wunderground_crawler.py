@@ -60,6 +60,7 @@ def get_weather(url):
     if resp.status_code == 200:
         download_html_file(url)
         weather = read_weather_table()
+        # 爬下来的数据中由于50°F是以英寸-磅-秒（imperial unit）为单位的温度，而不是以摄氏度或华氏度为单位，是包含特殊字符的
         return True, weather
     else:
         return False  # 如果异常，获取失败，返回None
