@@ -17,8 +17,10 @@ from selenium.webdriver.common.by import By
 PORT = 7890
 
 # 输入查询的起止日期
-start_date = input('请输入查询天气起始日期（8位数字）：')
-end_date = input('请输入查询天气终止日期（8位数字）：')
+# start_date = input('请输入查询天气起始日期（8位数字）：')
+start_date = '20200731'
+end_date = '20230308'
+# end_date = input('请输入查询天气终止日期（8位数字）：')
 # 处理起止日期
 struct_start_date = datetime.datetime.strptime(start_date, '%Y%m%d')
 struct_end_date = datetime.datetime.strptime(end_date, '%Y%m%d')
