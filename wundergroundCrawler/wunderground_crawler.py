@@ -121,10 +121,10 @@ def get_all_weather():
             df_backup.to_csv('weatherData/weather_backup/weather' + date + '.csv', index=False)
         else:
             print(date + '获取失败')
-    df = pd.concat(df_list)
-    start_date = query_list[0].strftime('%Y-%m-%d')
-    end_date = query_list[-1].strftime('%Y-%m-%d')
-    df.to_csv('weatherData/weather' + start_date + 'TO' + end_date + '.csv', index=False)
+    # df = pd.concat(df_list)
+    # start_date = query_list[0].strftime('%Y-%m-%d')
+    # end_date = query_list[-1].strftime('%Y-%m-%d')
+    # df.to_csv('weatherData/weather' + start_date + 'TO' + end_date + '.csv', index=False)
     return
 
 
