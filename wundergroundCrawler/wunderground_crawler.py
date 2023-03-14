@@ -12,15 +12,18 @@ from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
 
 # clash port
 PORT = 7890
 
 # 输入查询的起止日期
-# start_date = input('请输入查询天气起始日期（8位数字）：')
-start_date = '20200731'
-end_date = '20230308'
-# end_date = input('请输入查询天气终止日期（8位数字）：')
+start_date = input('请输入查询天气起始日期（8位数字）：')
+end_date = input('请输入查询天气终止日期（8位数字）：')
+
+# start_date = '20210726'
+# end_date = '20230308'
+
 # 处理起止日期
 struct_start_date = datetime.datetime.strptime(start_date, '%Y%m%d')
 struct_end_date = datetime.datetime.strptime(end_date, '%Y%m%d')
@@ -30,7 +33,10 @@ proxies = {'http': 'http://127.0.0.1:{}'.format(PORT), 'https': 'http://127.0.0.
 
 def download_html_file(url, save_path="current_file.html"):
     # 实例化 webdriver 对象
-    driver = webdriver.Chrome(executable_path="D:\chromedriver_win32\chromedriver.exe")
+    # hide the browser window
+    chrome_opt = Options()
+    chrome_opt.add_argument("--headless")
+    driver = webdriver.Chrome(executable_path="D:\chromedriver_win32\chromedriver.exe", options=chrome_opt)
     driver.get(url)
     elem = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH,
                                                                            '''//*[@id="inner-content"]/div[2]/div[1]/div[5]/div[1]/div/lib-city-history-observation/div/div[2]''')))
@@ -57,7 +63,7 @@ def get_weather(url):
     }
     # 两种方法可以获得html
     # 方法1 requests库
-    print("start crawling")
+    # print("start crawling")
     resp = requests.get(url, headers=headers, proxies=proxies)
     if resp.status_code == 200:
         download_html_file(url)
@@ -83,8 +89,8 @@ def generate_url(date):
     # formatted_date = date_obj.strftime("%Y-%-m-%-d")
     weather_station = 'ZSHC'
     url = "https://www.wunderground.com/history/daily/{0}/{1}/{2}".format(weather_station, 'date', str_date)
-    print()
-    print(url)
+    # print()
+    # print(url)
     return url
 
 
@@ -111,6 +117,8 @@ def get_all_weather():
             df_get.insert(0, 'Date', date)
             # df_get['Date'] = date
             df_list.append(df_get)
+            df_backup = pd.concat([df_get])
+            df_backup.to_csv('weatherData/weather_backup/weather' + date + '.csv', index=False)
         else:
             print(date + '获取失败')
     df = pd.concat(df_list)
@@ -120,4 +128,5 @@ def get_all_weather():
     return
 
 
-get_all_weather()
+if __name__ == "__main__":
+    get_all_weather()
