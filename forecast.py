@@ -60,6 +60,6 @@ def predict_api(model_path, pred_day, num_day_context, num_day_pred=7, crawl_for
 
     # run prediction
     model = deepAR_model(model_path, 24 * num_day_context, 24 * num_day_pred, building)
-    model.predict('./data/forecast_test/predict_data.csv')
+    model.predict(pred_data_path)
 
     return pred_data_path
