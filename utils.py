@@ -126,7 +126,8 @@ class dataset_generator:
         daily_folder = self.daily_weather_folder
         weather_list = []
         for root, dirs, files in os.walk(daily_folder):
-            for file in files:
+            for file in sorted(files):
+                # print(f"Now we are processing csv file {file}")
                 csv_file = os.path.join(root, file)
                 weather = pd.read_csv(csv_file)
                 # # find the days when data are lost.

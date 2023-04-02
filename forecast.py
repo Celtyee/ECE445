@@ -8,15 +8,20 @@ from my_model.forecast import deepAR_model
 
 # forecast the electricity load from [pred_day, pred_day+num_day_pred)
 # The pred_day should be in form: "%Y%m%d" e.g., "20230308".
-def predict_api(model_path, pred_day, num_day_context, num_day_pred=7, crawl_forecast=False):
+def predict_api(model_path, pred_day, num_day_context, num_day_pred=1, crawl_forecast=False):
     # max num for prediction is one week
-    assert num_day_pred <= 7
+    assert 7 >= num_day_pred > 0
     building = ['1A', '1B', '1C', '1D', '1E', '2A', '2B', '2C', '2D', '2E']
 
     pred_date_start = datetime.datetime.strptime(pred_day, "%Y%m%d").date()
     pred_date_end = pred_date_start + datetime.timedelta(days=num_day_pred - 1)
-    hist_date_start = pred_date_start - datetime.timedelta(days=num_day_context)
+
+    hist_date_start = pred_date_start - datetime.timedelta(days=num_day_context + num_day_pred + 1)
     hist_date_end = pred_date_start - datetime.timedelta(days=1)
+
+    print(f'forecast date {pred_date_start} - {pred_date_end}')
+    print(f'historical date {hist_date_start} - {hist_date_end}')
+
     electricity_folder = "../data/electricity"
     pred_weather_folder = "../data/weather/future"
     if crawl_forecast:
@@ -59,6 +64,7 @@ def predict_api(model_path, pred_day, num_day_context, num_day_pred=7, crawl_for
     pred_data.to_csv(pred_data_path, index=False)
 
     # run prediction
+    print(f'read csv file from {pred_data_path}')
     model = deepAR_model(model_path, 24 * num_day_context, 24 * num_day_pred, building)
     model.predict(pred_data_path)
 
