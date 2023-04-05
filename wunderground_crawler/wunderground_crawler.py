@@ -26,12 +26,13 @@ def generate_url(date):
 
 
 class weather_crawler:
-    def __init__(self, selenium_driver_path, cache_path):
+    def __init__(self, selenium_driver_path, cache_path, PORT=7890):
         if not os.path.exists(cache_path):
             os.makedirs(cache_path)
         self.html_path = f"{cache_path}/current_file.html"
         self.driver_path = selenium_driver_path
         self.daily_weather_folder = ''
+        self.port = PORT
 
     def __download_html_file(self, url):
         # 实例化 webdriver 对象
@@ -61,9 +62,8 @@ class weather_crawler:
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36 Edg/93.0.961.52'
         }
-        PORT = 7890
 
-        proxies = {'http': 'http://127.0.0.1:{}'.format(PORT), 'https': 'http://127.0.0.1:{}'.format(PORT)}
+        proxies = {'http': 'http://127.0.0.1:{}'.format(self.port), 'https': 'http://127.0.0.1:{}'.format(self.port)}
         resp = requests.get(url, headers=headers, proxies=proxies)
         if resp.status_code == 200:
             self.__download_html_file(url)
