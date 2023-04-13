@@ -10,7 +10,8 @@ def daily_update_weather(driver_path, save_folder, context_len=30):
 
     # create the list of request date list
     date_list = [d for d in pd.date_range(check_start_day, today, freq='D')]
-
+    if not os.path.exists(cwl.daily_weather_folder):
+        os.mkdir(cwl.daily_weather_folder)
     for root, dirs, files in os.walk(cwl.daily_weather_folder):
         for date in date_list:
             i = datetime.datetime.strftime(date, '%Y-%m-%d')
