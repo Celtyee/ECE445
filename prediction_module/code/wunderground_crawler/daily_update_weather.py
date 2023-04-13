@@ -26,6 +26,8 @@ def daily_update_weather(driver_path, save_folder, context_len=30):
 def main():
     google_driver_path = "./chromedriver_win32/chromedriver.exe"
     weather_folder = "../../data/weather/history"
+    if not os.path.exists(weather_folder):
+        os.mkdir(weather_folder)
     daily_update_weather(google_driver_path, weather_folder)
 
 
