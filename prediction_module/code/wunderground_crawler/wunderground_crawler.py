@@ -26,12 +26,15 @@ def generate_url(date):
 
 
 class weather_crawler:
-    def __init__(self, selenium_driver_path, cache_path):
+    def __init__(self, selenium_driver_path, weather_save_folder, port=7890):
+        cache_path = "./crawler_cache"
         if not os.path.exists(cache_path):
             os.makedirs(cache_path)
         self.html_path = f"{cache_path}/current_file.html"
         self.driver_path = selenium_driver_path
-        self.daily_weather_folder = ''
+        self.weather_folder = f'{weather_save_folder}'
+        self.daily_weather_folder = f'{self.weather_folder}/daily_weather'
+        self.port = port
 
     def __download_html_file(self, url):
         # 实例化 webdriver 对象
@@ -61,9 +64,8 @@ class weather_crawler:
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36 Edg/93.0.961.52'
         }
-        PORT = 7890
 
-        proxies = {'http': 'http://127.0.0.1:{}'.format(PORT), 'https': 'http://127.0.0.1:{}'.format(PORT)}
+        proxies = {'http': 'http://127.0.0.1:{}'.format(self.port), 'https': 'http://127.0.0.1:{}'.format(self.port)}
         resp = requests.get(url, headers=headers, proxies=proxies)
         if resp.status_code == 200:
             self.__download_html_file(url)
@@ -75,7 +77,7 @@ class weather_crawler:
 
     # start_date = '20210726'
     # end_date = '20230308'
-    def get_daily_weather(self, start_date, end_date, save_folder='./'):
+    def get_daily_weather(self, start_date, end_date):
         '''
         # 获取查询日期区间的所有天气
         query_list = []
@@ -87,10 +89,8 @@ class weather_crawler:
             query_list.append(struct_start_date + datetime.timedelta(days=i))
         '''
         # 处理起止日期
-        daily_weather_folder = f'{save_folder}/daily_weather'
-        self.daily_weather_folder = daily_weather_folder
-        if not os.path.exists(daily_weather_folder):
-            os.makedirs(daily_weather_folder)
+        if not os.path.exists(self.daily_weather_folder):
+            os.makedirs(self.daily_weather_folder)
         struct_start_date = datetime.datetime.strptime(start_date, '%Y%m%d')
         struct_end_date = datetime.datetime.strptime(end_date, '%Y%m%d')
 
@@ -106,6 +106,6 @@ class weather_crawler:
                 # df_get['Date'] = date
                 df_list.append(df_get)
                 df_backup = pd.concat([df_get])
-                df_backup.to_csv(f'{daily_weather_folder}/weather' + date + '.csv', index=False)
+                df_backup.to_csv(f'{self.daily_weather_folder}/weather{date}.csv', index=False)
             else:
                 print(date + '获取失败')

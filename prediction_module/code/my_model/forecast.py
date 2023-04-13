@@ -1,18 +1,10 @@
-import os
 import json
 import warnings
+import pandas as pd
+from pytorch_forecasting import DeepAR, TimeSeriesDataSet
+from pytorch_forecasting.data import NaNLabelEncoder
 
 warnings.filterwarnings("ignore")
-
-import matplotlib.pyplot as plt
-import pandas as pd
-import pytorch_lightning as pl
-from pytorch_lightning.callbacks import EarlyStopping
-import torch
-from pytorch_forecasting import Baseline, DeepAR, TimeSeriesDataSet
-from pytorch_forecasting.data import NaNLabelEncoder
-from pytorch_forecasting.data.examples import generate_ar_data
-from pytorch_forecasting.metrics import SMAPE, MultivariateNormalDistributionLoss
 
 
 class deepAR_model:
@@ -26,14 +18,14 @@ class deepAR_model:
         data = pd.read_csv(history_data)
         data = data.drop(['Wind', 'Precip.', 'Wind Gust'], axis=1)
         data = data.dropna()
+        cutoff = data["time_idx"].max() - self.predictor_length
 
-        max_encoder_length = self.context_length
-        max_prediction_length = self.predictor_length
+        print(f'The size of data is {len(data[lambda x: x["time_idx"] <= cutoff])}')
 
-        context_length = max_encoder_length
-        prediction_length = max_prediction_length
-
-        cutoff = data["time_idx"].max() - max_prediction_length
+        print(f'The cutoff is {cutoff}')    # 359
+        print(f'The max of time_idx is {data["time_idx"].max()}')   # 527
+        print(f'The context length is {self.context_length}')   # 336
+        print(f'The predictor length is {self.predictor_length}')   # 168
 
         history = TimeSeriesDataSet(
             data[lambda x: x.index <= cutoff],
@@ -41,14 +33,12 @@ class deepAR_model:
             target="val",
             categorical_encoders={"Building": NaNLabelEncoder().fit(data.Building)},
             group_ids=["Building"],
-            static_categoricals=[
-                "Building"
-            ],
+            static_categoricals=["Building"],
             time_varying_known_reals=["Temperature", "Humidity", "Pressure"],
             allow_missing_timesteps=True,
             time_varying_unknown_reals=["val"],
-            max_encoder_length=context_length,
-            max_prediction_length=prediction_length,
+            max_encoder_length=self.context_length,
+            max_prediction_length=self.predictor_length
         )
 
         test = TimeSeriesDataSet.from_dataset(history, data, min_prediction_idx=cutoff + 1)
