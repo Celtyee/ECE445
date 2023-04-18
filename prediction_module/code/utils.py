@@ -72,6 +72,21 @@ class dataset_generator:
         self.history_electricity_folder = electricity
 
     def generate_dataset(self, building_list, start_date, end_date, weather):
+        '''
+        generate the electricity usage dataset for all buildings in the building list from start_date to end_date with
+        the corresponding weather data.
+
+        Parameters
+        ----------
+        building_list: list of strings
+        start_date: datetime.datetime data structure
+        end_date: datetime.datetime data structure
+        weather: compressed weather data file
+
+        Returns
+        -------
+
+        '''
         name_list = building_list
         df_list = []
         # generate the weather data for 10 buildings
@@ -103,9 +118,11 @@ class dataset_generator:
         program_name = "logger"
         current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         folder_path = self.daily_weather_folder
+        # clear the logger
         logger = open(f"{program_name}.log", 'w')
         logger.write("\n")
         logger.close()
+
         logger = open(f"{program_name}.log", 'a')
         logger.write(f"The program '{program_name}' is running at {current_time}\n")
         incomplete_weather = []
@@ -120,7 +137,6 @@ class dataset_generator:
         return incomplete_weather
 
     # remove the unit in each column and compress the daily weather data into one file
-    # TODO: function reach: only compress the data that is complete and in a specific date range.
     def compress_weather_data(self, total_csv_save_path):
         incomplete_date = self.__check_incomplete_date()
         daily_folder = self.daily_weather_folder

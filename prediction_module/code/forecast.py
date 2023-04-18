@@ -6,10 +6,22 @@ import wunderground_crawler.wunderground_crawler as wc
 from my_model.forecast import deepAR_model
 
 
-# forecast the electricity load from [pred_day, pred_day+num_day_pred)
-# The pred_day should be in form: "%Y%m%d" e.g., "20230308".
-
 def predict_api(model_path, pred_day, num_day_context, num_day_pred=7, crawl_forecast=False):
+    '''
+    forecast the electricity load from [pred_day, pred_day+num_day_pred). Save the prediction in ../data/prediction/prediction.json
+
+    Parameters
+    ----------
+    model_path: pytorch checkpoint for training
+    pred_day: the beginning day of prediction, in the form "%Y%m%d", e.g., "20230308".
+    num_day_context:
+    num_day_pred: length of prediction, setting default as 7
+    crawl_forecast: To determine whether to get the forecast data.
+
+    Returns
+    -------
+
+    '''
     # max num for prediction is one week
     assert 7 >= num_day_pred > 0
     building = ['1A', '1B', '1C', '1D', '1E', '2A', '2B', '2C', '2D', '2E']

@@ -1,4 +1,5 @@
 import json
+import os
 import warnings
 import pandas as pd
 from pytorch_forecasting import DeepAR, TimeSeriesDataSet
@@ -17,15 +18,15 @@ class deepAR_model:
     def predict(self, history_data):
         data = pd.read_csv(history_data)
         data = data.drop(['Wind', 'Precip.', 'Wind Gust'], axis=1)
-        data = data.dropna()
+        data = data.fillna(method='ffill')
         cutoff = data["time_idx"].max() - self.predictor_length
 
         print(f'The size of data is {len(data[lambda x: x["time_idx"] <= cutoff])}')
 
-        print(f'The cutoff is {cutoff}')    # 359
-        print(f'The max of time_idx is {data["time_idx"].max()}')   # 527
-        print(f'The context length is {self.context_length}')   # 336
-        print(f'The predictor length is {self.predictor_length}')   # 168
+        print(f'The cutoff is {cutoff}')  # 359
+        print(f'The max of time_idx is {data["time_idx"].max()}')  # 527
+        print(f'The context length is {self.context_length}')  # 336
+        print(f'The predictor length is {self.predictor_length}')  # 168
 
         history = TimeSeriesDataSet(
             data[lambda x: x.index <= cutoff],
@@ -51,5 +52,11 @@ class deepAR_model:
         for idx in range(len(self.building_series)):
             pred_dict[self.building_series[idx]] = predictions[idx].tolist()
 
-        with open("prediction.json", "w") as f:
+        save_folder_path = "../data/prediction"
+        if not os.path.exists(save_folder_path):
+            os.mkdir(save_folder_path)
+
+        with open(f"{save_folder_path}/prediction.json", "w") as f:
             json.dump(pred_dict, f)
+
+        return f"{save_folder_path}/prediction.json"

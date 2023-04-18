@@ -12,14 +12,7 @@ import datetime
 import argparse
 
 
-def train(hidden_size, rnn_layer, context_day, min_lr):
-    if not os.path.exists("../train_recorder"):
-        os.mkdir("../train_recorder")
-
-    data = pd.read_csv('../dataset/train/train.csv')
-    data = data.drop(['Wind', 'Precip.', 'Wind Gust'], axis=1)
-    data = data.dropna()
-    data = data.astype(dict(Building=str))
+def train(data, hidden_size, rnn_layer, context_day, min_lr):
     # create dataset and dataloaders
     max_encoder_length = int(24 * context_day)
     max_prediction_length = int(24 * 7)
@@ -79,7 +72,7 @@ def train(hidden_size, rnn_layer, context_day, min_lr):
     return loss
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--hidden_size', type=int, help="hidden size of deepAR network", default=30)
     parser.add_argument('--rnn_layers', type=int, help="number of rnn layers in deepAR network", default=2)
@@ -103,10 +96,22 @@ if __name__ == "__main__":
     logger.info(f"Pytorch-lightning={pl.__version__}")
     logger.critical(f"Training starts at {datetime.datetime.now()}")
     min_lr_list = [10 ** y for y in range(-4, 0)]
+    if not os.path.exists("../train_recorder"):
+        os.mkdir("../train_recorder")
+    data = pd.read_csv('../dataset/train/train.csv')
+    data = data.drop(['Wind', 'Precip.', 'Wind Gust'], axis=1)
+    data = data.fillna(method="ffill")
+    data = data.astype(dict(Building=str))
+
     for min_lr in min_lr_list:
+        # record the hyper-parameters
         logger.critical(
             f"hidden_size={hidden}, rnn_layers={rnn}, context_day={context}, min_lr={min_lr}, pl_seed = {pl_seed}")
-        val_loss = train(hidden_size=hidden, rnn_layer=rnn, context_day=context, min_lr=min_lr)
+        val_loss = train(data, hidden_size=hidden, rnn_layer=rnn, context_day=context, min_lr=min_lr)
         logger.critical(f"loss = {val_loss}")
 
     logger.info("Train finish\n")
+
+
+if __name__ == "__main":
+    main()
