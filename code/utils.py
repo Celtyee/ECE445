@@ -295,11 +295,4 @@ class my_deepAR_model:
         for idx in range(len(self.building_series)):
             pred_dict[self.building_series[idx]] = predictions[idx].tolist()
 
-        save_folder_path = "../data/test"
-        if not os.path.exists(save_folder_path):
-            os.mkdir(save_folder_path)
-
-        with open(f"{save_folder_path}/prediction.json", "w") as f:
-            json.dump(pred_dict, f)
-
-        return f"{save_folder_path}/prediction.json"
+        return pred_dict

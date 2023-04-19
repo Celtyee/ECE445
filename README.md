@@ -8,7 +8,17 @@ Proxy is required on PORT 7890, otherwise you can set the _**port**_ parameter o
 
 Create the conda virtual environment.
 
-` conda env create -n ece445_elf -f SDP_env.yaml `
+Package request:
+
+`   pytorch-forecasting=0.10.2 pytorch-lightning=1.7.0 pytorch=1.13.1`
+
+Activate the virtual environment
+
+` conda activate DeepAR_env`
+
+Go to the prediction
+
+` cd prediction_module/code/`
 
 To generate the prediction of hourly electricity usage in next week, run
 

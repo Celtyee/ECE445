@@ -108,4 +108,4 @@ class weather_crawler:
                 df_backup = pd.concat([df_get])
                 df_backup.to_csv(f'{self.daily_weather_folder}/weather{date}.csv', index=False)
             else:
-                print(date + '获取失败')
+                print(date + 'crawl fails')

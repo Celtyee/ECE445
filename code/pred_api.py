@@ -1,10 +1,12 @@
 import datetime
 import pandas as pd
+import os
+import json
 from utils import dataset_generator, my_deepAR_model
-import wunderground_crawler.wunderground_crawler as wc
+from wunderground_crawler import wunderground_crawler
 
 
-def predict_api(model_path, pred_day, num_day_context, num_day_pred=7, crawl_forecast=False):
+def predict_api(model_path, pred_day, num_day_context=30, num_day_pred=7, crawl_forecast=False):
     '''
     forecast the electricity load from [pred_day, pred_day+num_day_pred). Save the prediction in ../data/prediction/prediction.json
 
@@ -33,20 +35,20 @@ def predict_api(model_path, pred_day, num_day_context, num_day_pred=7, crawl_for
     print(f'forecast date {pred_date_start} - {pred_date_end}')
     print(f'historical date {hist_date_start} - {hist_date_end}')
 
-    electricity_folder = "../../data/electricity"
-    pred_weather_folder = "../../data/weather/future"
+    electricity_path = "../data/electricity"
+    future_weather_path = "../data/weather/future"
     if crawl_forecast:
         # crawl weather forecast data from wunderground
 
-        driver_path = "D:/chromedriver_win32/chromedriver.exe"
+        driver_path = "wunderground_crawler/chromedriver_win32/chromedriver-112.exe"
 
-        crawler = wc.weather_crawler(driver_path, pred_weather_folder)
+        crawler = wunderground_crawler.weather_crawler(driver_path, future_weather_path)
         crawler.get_daily_weather(start_date=pred_date_start.strftime("%Y%m%d"),
                                   end_date=pred_date_end.strftime("%Y%m%d"))
 
     # compress the future data
-    pred_weather_csv = f'{pred_weather_folder}/future_weather.csv'
-    future_generator = dataset_generator(pred_weather_folder, electricity_folder)
+    pred_weather_csv = f'{future_weather_path}/future_weather.csv'
+    future_generator = dataset_generator(future_weather_path, electricity_path)
     future_generator.compress_weather_data(pred_weather_csv)
 
     # get time_varying_known_real data for TimeSeriesDataSet
@@ -54,10 +56,10 @@ def predict_api(model_path, pred_day, num_day_context, num_day_pred=7, crawl_for
     pred_df_list = future_generator.generate_dataset(building, pred_date_start, pred_date_end, pred_weather_csv)
 
     # get historical whether data and electricity data
-    hist_weather_folder = "../../data/weather/history"
+    history_weather_path = "../data/weather/history"
 
-    hist_weather_csv = f'{hist_weather_folder}/pre-processed_weather.csv'
-    historical_generator = dataset_generator(hist_weather_folder, electricity_folder)
+    hist_weather_csv = f'{history_weather_path}/pre-processed_weather.csv'
+    historical_generator = dataset_generator(history_weather_path, electricity_path)
 
     hist_df_list = historical_generator.generate_dataset(building, hist_date_start, hist_date_end, hist_weather_csv)
 
@@ -69,12 +71,20 @@ def predict_api(model_path, pred_day, num_day_context, num_day_pred=7, crawl_for
         df['time_idx'] = range(len(df))
         total_df_list.append(df)
     pred_data = pd.concat(total_df_list)
-    pred_data_path = f'{pred_weather_folder}/predict_data.csv'
+    pred_data_path = f'{future_weather_path}/predict_data.csv'
     pred_data.to_csv(pred_data_path, index=False)
 
     # run prediction
     print(f'read csv file from {pred_data_path}')
     model = my_deepAR_model(model_path, 24 * num_day_context, 24 * num_day_pred, building)
-    model.predict(pred_data_path)
+    prediction = model.predict(pred_data_path)
 
-    return pred_data_path
+    save_folder_path = "../data/test"
+    if not os.path.exists(save_folder_path):
+        os.mkdir(save_folder_path)
+
+    with open(f"{save_folder_path}/prediction.json", "w") as f:
+        json.dump(prediction, f)
+
+    print("Prediction finishes")
+    return True
