@@ -17,14 +17,14 @@ def train(data, hidden_size, rnn_layer, context_day, min_lr):
     max_encoder_length = int(24 * context_day)
     max_prediction_length = int(24 * 7)
 
-    training_cutoff = data["time_idx"].max() - max_prediction_length
+    cutoff = data["time_idx"].max() - max_prediction_length
     # print(training_cutoff)
 
     context_length = max_encoder_length
     prediction_length = max_prediction_length
 
     training = TimeSeriesDataSet(
-        data[lambda x: x.index <= training_cutoff],
+        data[lambda x: x.index <= cutoff],
         time_idx="time_idx",
         target="val",
         categorical_encoders={"Building": NaNLabelEncoder().fit(data.Building),
@@ -42,7 +42,7 @@ def train(data, hidden_size, rnn_layer, context_day, min_lr):
         max_prediction_length=prediction_length,
     )
 
-    validation = TimeSeriesDataSet.from_dataset(training, data, min_prediction_idx=training_cutoff + 1)
+    validation = TimeSeriesDataSet.from_dataset(training, data, min_prediction_idx=cutoff + 1)
     batch_size = 128
 
     # synchronize samples in each batch over time - only necessary for DeepVAR, not for DeepAR
@@ -98,13 +98,13 @@ def main():
     min_lr_list = [10 ** y for y in range(-4, 0)]
     if not os.path.exists("../train_recorder"):
         os.mkdir("../train_recorder")
-    data = pd.read_csv('../dataset/train/train.csv')
+    data = pd.read_csv('../../data/train/train.csv')
     data = data.drop(['Wind', 'Precip.', 'Wind Gust'], axis=1)
-    data = data.fillna(method="ffill")
+    data = data.fillna(method="nearest")
     data = data.astype(dict(Building=str))
 
     for min_lr in min_lr_list:
-        # record the hyper-parameters
+        # record the hyperparameters
         logger.critical(
             f"hidden_size={hidden}, rnn_layers={rnn}, context_day={context}, min_lr={min_lr}, pl_seed = {pl_seed}")
         val_loss = train(data, hidden_size=hidden, rnn_layer=rnn, context_day=context, min_lr=min_lr)
@@ -113,5 +113,5 @@ def main():
     logger.info("Train finish\n")
 
 
-if __name__ == "__main":
+if __name__ == "__main__":
     main()

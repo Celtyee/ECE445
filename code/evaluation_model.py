@@ -1,4 +1,4 @@
-from forecast import *
+from pred_api import *
 import sys
 import json
 import datetime
@@ -12,8 +12,8 @@ def metrics_func(pred_day, json_path):
 
     Parameters
     ----------
-    pred_day: string in the form %Y%m%d
-    json_path: the json file save the prediction result
+    pred_day: string - "%Y%m%d".
+    json_path: the json file saving the prediction result.
 
     Returns None
     -------
@@ -25,7 +25,7 @@ def metrics_func(pred_day, json_path):
         usage_pred = np.array(data[building])
         start_date = datetime.datetime.strptime(pred_day, "%Y%m%d")
         end_date = start_date + datetime.timedelta(days=7)
-        df_electricity = pd.read_csv(f"../data/electricity/{building}.csv")
+        df_electricity = pd.read_csv(f"../../data/electricity/{building}.csv")
         df_electricity['time'] = pd.to_datetime(df_electricity['time']) + datetime.timedelta(hours=8)
 
         mask_ele = (df_electricity['time'].dt.date >= start_date) & (df_electricity['time'].dt.date <= end_date)
