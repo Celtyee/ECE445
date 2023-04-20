@@ -2,6 +2,8 @@ from wunderground_crawler import *
 import datetime
 import os
 
+import time
+
 
 def daily_update_weather(driver_path, save_folder, context_len=30):
     cwl = weather_crawler(driver_path, save_folder)
@@ -33,4 +35,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # sleep the operating system for one day
+    while True:
+        main()
+        time.sleep(86400)
