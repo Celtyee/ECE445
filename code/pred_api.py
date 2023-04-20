@@ -71,7 +71,8 @@ def predict_api(model_path, pred_day, num_day_context=30, num_day_pred=7, crawl_
         df['time_idx'] = range(len(df))
         total_df_list.append(df)
     pred_data = pd.concat(total_df_list)
-    pred_data_path = f'{future_weather_path}/predict_data.csv'
+    save_folder_path = "../data/test"
+    pred_data_path = f'{save_folder_path}/predict_data.csv'
     pred_data.to_csv(pred_data_path, index=False)
 
     # run prediction
@@ -79,12 +80,12 @@ def predict_api(model_path, pred_day, num_day_context=30, num_day_pred=7, crawl_
     model = my_deepAR_model(model_path, 24 * num_day_context, 24 * num_day_pred, building)
     prediction = model.predict(pred_data_path)
 
-    save_folder_path = "../data/test"
     if not os.path.exists(save_folder_path):
         os.mkdir(save_folder_path)
 
-    with open(f"{save_folder_path}/prediction.json", "w") as f:
+    prediction_path = f"{save_folder_path}/prediction.json"
+    with open(prediction_path, "w") as f:
         json.dump(prediction, f)
 
     print("Prediction finishes")
-    return True
+    return prediction_path

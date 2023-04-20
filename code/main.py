@@ -4,6 +4,7 @@ import datetime
 import pandas as pd
 import numpy as np
 from sklearn.metrics import mean_squared_error, mean_absolute_error
+import logging
 
 
 def metrics_func(pred_day, json_path):
@@ -42,11 +43,13 @@ def main():
     model_path = "my_model/hidden=30-rnn_layer=2-context_day=30-min_lr=0.001.ckpt"
     pred_day = '20221124'  # 20221124
     num_day_context = 30
-    predict_api(model_path, pred_day, num_day_context, crawl_forecast=True)
-    json_path = "../data/prediction/prediction.json"
+    json_path = predict_api(model_path, pred_day, num_day_context, crawl_forecast=True)
     metrics_func(pred_day, json_path)
     rmse, mape, mae = metrics_func(pred_day, json_path)
-    print(f"RMSE: {rmse}\nMAPE: {mape}\nMAE: {mae}")
+    logging.basicConfig(level=logging.INFO)
+    # set the logger name as "metrics"
+    logger = logging.getLogger("metrics")
+    logger.info(f"RMSE: {rmse}\nMAPE: {mape}\nMAE: {mae}")
 
 
 if __name__ == "__main__":
