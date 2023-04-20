@@ -38,4 +38,5 @@ if __name__ == "__main__":
     # sleep the operating system for one day
     while True:
         main()
+        print("finished! sleep for one day")
         time.sleep(86400)
