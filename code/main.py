@@ -26,7 +26,8 @@ def metrics_func(pred_day, json_path):
         usage_pred = np.array(data[building])
         start_date = datetime.datetime.strptime(pred_day, "%Y%m%d")
         end_date = start_date + datetime.timedelta(days=7)
-        df_electricity = pd.read_csv(f"../../data/electricity/{building}.csv")
+        building_path = f"../data/electricity/{building}.csv"
+        df_electricity = pd.read_csv(building_path)
         df_electricity['time'] = pd.to_datetime(df_electricity['time']) + datetime.timedelta(hours=8)
 
         mask_ele = (df_electricity['time'].dt.date >= start_date) & (df_electricity['time'].dt.date <= end_date)
