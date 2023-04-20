@@ -117,7 +117,7 @@ class dataset_generator:
             # fill the nan with the previous value
             df_ele = df_ele.fillna(method="ffill")
 
-            print(f"the number of losing electricity data for building {building} is {np.sum(val_mask)}")
+            # print(f"the number of losing electricity data for building {building} is {np.sum(val_mask)}")
             electricity_sub = df_ele[mask_ele]['val'][1:]
             training_df = pd.concat((weather_sub.reset_index(drop=True), electricity_sub.reset_index(drop=True)),
                                     axis=1)
