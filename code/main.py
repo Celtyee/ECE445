@@ -23,7 +23,7 @@ def metrics_func(pred_day, json_path):
     with open(json_path, 'r') as f:
         data = json.load(f)
     for building in data.keys():
-        usage_pred = np.array(data[building])[:24 * 7]
+        usage_pred = np.array(data[building])
         start_date = datetime.datetime.strptime(pred_day, "%Y%m%d")
         end_date = start_date + datetime.timedelta(days=7)
         building_path = f"../data/electricity/{building}.csv"
@@ -31,10 +31,10 @@ def metrics_func(pred_day, json_path):
         df_electricity['time'] = pd.to_datetime(df_electricity['time']) + datetime.timedelta(hours=8)
 
         mask_ele = (df_electricity['time'].dt.date >= start_date.date()) & (
-                    df_electricity['time'].dt.date <= end_date.date())
+                df_electricity['time'].dt.date <= end_date.date())
 
         usage_y = df_electricity[mask_ele]['val'][1:]
-        usage_y = np.array(usage_y)
+        usage_y = np.array(usage_y)[:24*7]
         rmse = np.sqrt(mean_squared_error(usage_y, usage_pred))
         mape = np.mean(np.abs(usage_y - usage_pred) / usage_y)
         mae = mean_absolute_error(usage_y, usage_pred)
