@@ -40,7 +40,7 @@ def metrics_func(pred_day, json_path):
 
 
 def main():
-    model_path = "my_model/hidden=30-rnn_layer=2-context_day=30-min_lr=0.001.ckpt"
+    model_path = "my_model/hidden=28-rnn_layer=2-context_day=30-min_lr=0.0001.ckpt"
     pred_day = '20221124'  # 20221124
     num_day_context = 30
     json_path = predict_api(model_path, pred_day, num_day_context, crawl_forecast=True)
