@@ -6,7 +6,7 @@ import pytorch_forecasting as pf
 import torch
 from pytorch_forecasting import Baseline, TimeSeriesDataSet
 from pytorch_forecasting.data import NaNLabelEncoder
-from utils import train_model, validation_model
+from utils import train_api
 import logging
 import datetime
 import argparse
@@ -34,7 +34,7 @@ def train(data, hidden_size, rnn_layer, context_day, min_lr):
             "Building"
         ],
 
-        time_varying_known_reals=["Temperature", "Humidity"],
+        time_varying_known_reals=["Temperature", "Humidity", "is_weekend"],
         time_varying_known_categoricals=["Condition"],
         allow_missing_timesteps=True,
         time_varying_unknown_reals=["val"],
@@ -67,8 +67,9 @@ def train(data, hidden_size, rnn_layer, context_day, min_lr):
     if not os.path.exists(save_folder):
         os.mkdir(save_folder)
 
-    net = train_model(training, train_dataloader, val_dataloader, hidden_size, rnn_layer, save_folder, min_lr)
-    loss = validation_model(net, save_folder, validation, val_dataloader)
+    trainer = train_api()
+    net = trainer.train_model(training, train_dataloader, val_dataloader, hidden_size, rnn_layer, save_folder, min_lr)
+    loss = trainer.validation_model(net, save_folder, validation, val_dataloader)
     return loss
 
 
@@ -98,9 +99,10 @@ def main():
     min_lr_list = [10 ** y for y in range(-4, 0)]
     if not os.path.exists("../train_recorder"):
         os.mkdir("../train_recorder")
-    data = pd.read_csv('../../data/train/train.csv')
+    train_dataset_path = "../data/train/train.csv"
+    data = pd.read_csv(train_dataset_path)
     data = data.drop(['Wind', 'Precip.', 'Wind Gust'], axis=1)
-    data = data.fillna(method="nearest")
+    data = data.fillna(method="ffill")
     data = data.astype(dict(Building=str))
 
     for min_lr in min_lr_list:

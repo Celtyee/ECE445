@@ -42,11 +42,11 @@ def main():
     model_path = "my_model/hidden=30-rnn_layer=2-context_day=30-min_lr=0.001.ckpt"
     pred_day = '20221124'  # 20221124
     num_day_context = 30
-    result = predict_api(model_path, pred_day, num_day_context, crawl_forecast=True)
-    print(result)
-    # metrics_func(pred_day, json_path)
-    # rmse, mape, mae = metrics_func(pred_day, json_path)
-    # print(f"RMSE: {rmse}\nMAPE: {mape}\nMAE: {mae}")
+    predict_api(model_path, pred_day, num_day_context, crawl_forecast=True)
+    json_path = "../data/prediction/prediction.json"
+    metrics_func(pred_day, json_path)
+    rmse, mape, mae = metrics_func(pred_day, json_path)
+    print(f"RMSE: {rmse}\nMAPE: {mape}\nMAE: {mae}")
 
 
 if __name__ == "__main__":
