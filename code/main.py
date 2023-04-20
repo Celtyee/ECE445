@@ -19,7 +19,8 @@ def metrics_func(pred_day, json_path):
     -------
 
     '''
-    with open(json_path, 'w') as f:
+    # load json data from json_path
+    with open(json_path, 'r') as f:
         data = json.load(f)
     for building in data.keys():
         usage_pred = np.array(data[building])
@@ -43,7 +44,7 @@ def main():
     model_path = "my_model/hidden=28-rnn_layer=2-context_day=30-min_lr=0.0001.ckpt"
     pred_day = '20221124'  # 20221124
     num_day_context = 30
-    # json_path = predict_api(model_path, pred_day, num_day_context, crawl_forecast=True)
+    json_path = predict_api(model_path, pred_day, num_day_context, crawl_forecast=True)
 
     json_path = "../data/test/prediction.json"
     metrics_func(pred_day, json_path)
