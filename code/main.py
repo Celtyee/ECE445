@@ -30,7 +30,7 @@ def metrics_func(pred_day, json_path):
         df_electricity = pd.read_csv(building_path)
         df_electricity['time'] = pd.to_datetime(df_electricity['time']) + datetime.timedelta(hours=8)
 
-        mask_ele = (df_electricity['time'].dt.date >= start_date) & (df_electricity['time'].dt.date <= end_date)
+        mask_ele = (df_electricity['time'].dt.date >= start_date.date()) & (df_electricity['time'].dt.date <= end_date.date())
 
         usage_y = df_electricity[mask_ele]['val'][1:]
         usage_y = np.array(usage_y)
