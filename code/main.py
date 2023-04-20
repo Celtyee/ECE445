@@ -20,6 +20,10 @@ def metrics_func(pred_day, json_path):
 
     '''
     # load json data from json_path
+    rmse = []
+    mape = []
+    mae = []
+
     with open(json_path, 'r') as f:
         data = json.load(f)
     for building in data.keys():
@@ -34,12 +38,12 @@ def metrics_func(pred_day, json_path):
                 df_electricity['time'].dt.date <= end_date.date())
 
         usage_y = df_electricity[mask_ele]['val'][1:]
-        usage_y = np.array(usage_y)[:24*7]
-        rmse = np.sqrt(mean_squared_error(usage_y, usage_pred))
-        mape = np.mean(np.abs(usage_y - usage_pred) / usage_y)
-        mae = mean_absolute_error(usage_y, usage_pred)
+        usage_y = np.array(usage_y)[:24 * 7]
+        rmse.append(np.sqrt(mean_squared_error(usage_y, usage_pred)))
+        mape.append(np.mean(np.abs(usage_y - usage_pred) / usage_y))
+        mae.append(mean_absolute_error(usage_y, usage_pred))
 
-        return rmse, mape, mae
+    return rmse, mape, mae
 
 
 def main():
@@ -50,11 +54,12 @@ def main():
 
     json_path = "../data/test/prediction.json"
     metrics_func(pred_day, json_path)
-    rmse, mape, mae = metrics_func(pred_day, json_path)
+    rmse_list, mape_list, mae_list = metrics_func(pred_day, json_path)
     logging.basicConfig(level=logging.INFO)
     # set the logger name as "metrics"
     logger = logging.getLogger("metrics")
-    logger.info(f"RMSE: {rmse}\nMAPE: {mape}\nMAE: {mae}")
+    for rmse, mape, mae in zip(rmse_list, mape_list, mae_list):
+        logger.info(f"RMSE: {rmse}\nMAPE: {mape}\nMAE: {mae}")
 
 
 if __name__ == "__main__":
