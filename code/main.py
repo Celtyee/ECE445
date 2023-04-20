@@ -52,7 +52,6 @@ def main():
     num_day_context = 30
     json_path = predict_api(model_path, pred_day, num_day_context, crawl_forecast=True)
 
-    json_path = "../data/test/prediction.json"
     metrics_func(pred_day, json_path)
     rmse_list, mape_list, mae_list = metrics_func(pred_day, json_path)
     logging.basicConfig(level=logging.INFO)
