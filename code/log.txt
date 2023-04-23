@@ -1,16 +1,9 @@
-2023-04-13 15:12:05,850 - train_logger - INFO - Pytorch-version=1.13.1-<module>
-2023-04-13 15:12:05,850 - train_logger - INFO - Pytorch-forecasting=0.10.2-<module>
-2023-04-13 15:12:05,850 - train_logger - INFO - Pytorch-lightning=1.7.0-<module>
-2023-04-13 15:12:05,850 - train_logger - CRITICAL - Training starts at 2023-04-13 15:12:05.850777-<module>
-2023-04-13 15:12:05,850 - train_logger - CRITICAL - hidden_size=30, rnn_layers=2, context_day=7, min_lr=0.0001, pl_seed = 42-<module>
-2023-04-13 15:12:21,488 - train_logger - CRITICAL - loss = 7.2105302810668945-<module>
-2023-04-13 15:12:21,488 - train_logger - INFO - Train finish
--<module>
-2023-04-13 15:30:39,894 - train_logger - CRITICAL - Training starts at 2023-04-13 15:30:39.894306-<module>
-2023-04-13 15:30:39,904 - train_logger - CRITICAL - hidden_size=10, rnn_layers=1, context_day=7, min_lr=1e-05-<module>
-2023-04-13 15:30:57,364 - train_logger - CRITICAL - Training starts at 2023-04-13 15:30:57.364950-<module>
-2023-04-13 15:30:57,375 - train_logger - CRITICAL - hidden_size=10, rnn_layers=1, context_day=7, min_lr=1e-05-<module>
-2023-04-13 15:31:15,224 - train_logger - CRITICAL - Training starts at 2023-04-13 15:31:15.224437-<module>
-2023-04-13 15:31:15,235 - train_logger - CRITICAL - hidden_size=10, rnn_layers=1, context_day=7, min_lr=1e-05-<module>
-2023-04-13 15:31:32,346 - train_logger - CRITICAL - Training starts at 2023-04-13 15:31:32.346406-<module>
-2023-04-13 15:31:32,357 - train_logger - CRITICAL - hidden_size=10, rnn_layers=1, context_day=7, min_lr=1e-05-<module>
+2023-04-23 21:54:39,938 - train_logger - INFO - Pytorch-version=1.13.1-main
+2023-04-23 21:54:39,938 - train_logger - INFO - Pytorch-forecasting=0.10.2-main
+2023-04-23 21:54:39,938 - train_logger - INFO - Pytorch-lightning=1.7.0-main
+2023-04-23 21:54:39,938 - train_logger - CRITICAL - Training starts at 2023-04-23 21:54:39.938514-main
+2023-04-23 21:54:39,990 - train_logger - CRITICAL - hidden_size=30, rnn_layers=2, context_day=30, min_lr=0.0001, pl_seed = 42-main
+2023-04-23 22:00:13,140 - train_logger - CRITICAL - loss = 11.3262300491333-main
+2023-04-23 22:00:13,141 - train_logger - CRITICAL - hidden_size=30, rnn_layers=2, context_day=30, min_lr=0.001, pl_seed = 42-main
+2023-04-23 22:03:17,479 - train_logger - CRITICAL - loss = 14.753491401672363-main
+2023-04-23 22:03:17,479 - train_logger - CRITICAL - hidden_size=30, rnn_layers=2, context_day=30, min_lr=0.01, pl_seed = 42-main

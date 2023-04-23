@@ -4,7 +4,7 @@ import pandas as pd
 import pytorch_lightning as pl
 import pytorch_forecasting as pf
 import torch
-from pytorch_forecasting import Baseline, TimeSeriesDataSet
+from pytorch_forecasting import TimeSeriesDataSet
 from pytorch_forecasting.data import NaNLabelEncoder
 from utils import train_api
 import logging
@@ -63,13 +63,15 @@ def train(data, hidden_size, rnn_layer, context_day, min_lr):
     # # baseline for being beat
     # print(SMAPE()(baseline_predictions, actuals))
 
-    save_folder = f"../train_recorder/hidden={hidden_size}-rnn_layer={rnn_layer}-context_day={context_day}-min_lr={min_lr}"
-    if not os.path.exists(save_folder):
-        os.mkdir(save_folder)
+    save_folder_path = f"../data/train_recorder/hidden={hidden_size}-rnn_layer={rnn_layer}-context_day={context_day}-min_lr={min_lr}"
+    if not os.path.exists(save_folder_path):
+        os.mkdir(save_folder_path)
 
     trainer = train_api()
-    net = trainer.train_model(training, train_dataloader, val_dataloader, hidden_size, rnn_layer, save_folder, min_lr)
-    loss = trainer.validation_model(net, save_folder, validation, val_dataloader)
+    net, ckpt_path = trainer.train_model(training, train_dataloader, val_dataloader, hidden_size, rnn_layer,
+                                         save_folder_path,
+                                         min_lr)
+    loss = trainer.validation_model(net, save_folder_path, validation, val_dataloader, ckpt_path)
     return loss
 
 
@@ -87,7 +89,7 @@ def main():
     pl_seed = 42
     pl.seed_everything(pl_seed)
     logger = logging.getLogger("train_logger")
-    logging.basicConfig(filename='log.txt',
+    logging.basicConfig(filename='train_logger.txt',
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s-%(funcName)s',
                         level=logging.INFO,
                         filemode='w')
@@ -97,8 +99,9 @@ def main():
     logger.info(f"Pytorch-lightning={pl.__version__}")
     logger.critical(f"Training starts at {datetime.datetime.now()}")
     min_lr_list = [10 ** y for y in range(-4, 0)]
-    if not os.path.exists("../train_recorder"):
-        os.mkdir("../train_recorder")
+
+    if not os.path.exists("../data/train_recorder"):
+        os.mkdir("../data/train_recorder")
     train_dataset_path = "../data/train/train.csv"
     data = pd.read_csv(train_dataset_path)
     data = data.drop(['Wind', 'Precip.', 'Wind Gust'], axis=1)

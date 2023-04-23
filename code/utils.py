@@ -11,6 +11,7 @@ from pytorch_lightning.callbacks import EarlyStopping
 from pytorch_forecasting import DeepAR, TimeSeriesDataSet
 from pytorch_forecasting.data import NaNLabelEncoder
 import numpy as np
+import logging
 
 warnings.filterwarnings("ignore")
 
@@ -97,6 +98,7 @@ class dataset_generator:
         name_list = building_list
         df_list = []
         # generate the weather data for 10 buildings
+        # FIXME: there are weather data lost in generating the weather data for 10 buildings for the end of the day
         df_wtr = pd.read_csv(weather)[1::2]
         df_wtr['timestamp'] = pd.to_datetime(df_wtr['timestamp'])
 
@@ -134,25 +136,23 @@ class dataset_generator:
 
     def __check_incomplete_date(self):
         std_shape = (48, 11)
-        program_name = "logger"
-        current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        folder_path = self.daily_weather_folder
-        # clear the logger
-        logger = open(f"{program_name}.log", 'w')
-        logger.write("\n")
-        logger.close()
+        # create a logger and record the incomplete date using logging
+        logger = logging.getLogger("incomplete_date_logger")
+        logging.basicConfig(filename='incomplete_date_logger.txt',
+                            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s-%(funcName)s',
+                            level=logging.INFO)
 
-        logger = open(f"{program_name}.log", 'a')
-        logger.write(f"The program '{program_name}' is running at {current_time}\n")
+        folder_path = self.daily_weather_folder
         incomplete_weather = []
         for root, dirs, files in os.walk(folder_path):
             for file in files:
                 csv_file = os.path.join(root, file)
                 obj_file = pd.read_csv(csv_file)
                 if obj_file.shape != std_shape:
-                    logger.write(f"inconsistent file:{file}, the corresponding shape is {obj_file.shape}\n")
+                    log_sentence = f"inconsistent file:{file}, the corresponding shape is {obj_file.shape}\n"
+                    # print(log_sentence)
+                    logger.critical(log_sentence)
                     incomplete_weather.append(file[7:17])
-        logger.close()
         return incomplete_weather
 
     def compress_weather_data(self, total_csv_save_path):
@@ -228,12 +228,12 @@ class train_api:
             train_dataloaders=dataloader_train,
             val_dataloaders=dataloader_val,
         )
+        ckpt_path = f"{save_folder}/hidden={hidden_size}_rnn={rnn_layers}_lr={min_lr}.ckpt"
+        trainer.save_checkpoint(ckpt_path)
+        return net, ckpt_path
 
-        trainer.save_checkpoint(f"{save_folder}/{save_folder}.ckpt")
-        return net
-
-    def validation_model(self, net, save_folder, timeseries_val, dataloader_val):
-        model = DeepAR.load_from_checkpoint(f"{save_folder}/checkpoint.ckpt")
+    def validation_model(self, net, save_folder, timeseries_val, dataloader_val, ckpt_path):
+        model = DeepAR.load_from_checkpoint(ckpt_path)
         actuals = torch.cat([y[0] for x, y in iter(dataloader_val)])
         predictions = model.predict(dataloader_val)
         loss = ((actuals - predictions).abs().mean())
@@ -257,8 +257,19 @@ class my_deepAR_model:
         self.context_length = context_length
         self.predictor_length = predictor_length
 
-    def predict(self, history_data):
-        data = pd.read_csv(history_data)
+    def predict(self, csv_data_path):
+        '''
+        Predict the future electricity usage with the prediction data.
+        Parameters
+        ----------
+        csv_data_path: The path of necessary data for prediction, including historical weather and electricity usage data
+                        as well as the future weather data, str.
+
+        Returns
+        -------
+
+        '''
+        data = pd.read_csv(csv_data_path)
         data = data.drop(['Wind', 'Precip.', 'Wind Gust'], axis=1)
         data = data.fillna(method='pad')
         cutoff = data["time_idx"].max() - self.predictor_length

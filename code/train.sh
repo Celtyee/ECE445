@@ -1,7 +1,7 @@
 #!/bin/bash
 
 hidden_set=()
-for i in $(seq 28 1 42); do
+for i in $(seq 30 10 60); do
     # shellcheck disable=SC2206
     hidden_set+=($i)
 done
@@ -13,8 +13,8 @@ for i in $(seq 2 4);do
 done
 
 context_set=()
-for i in $(seq 1 3);do
-  context_set+=($((30*i)))
+for i in $(seq 28 42);do
+  context_set+=($((i)))
 done
 
 for hidden in "${hidden_set[@]}";do
