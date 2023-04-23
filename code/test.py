@@ -47,6 +47,12 @@ def metrics_func(pred_day, data):
 
 
 def main():
+    '''
+    do test for the ckpt from 20210305 to 20210430
+    Returns
+    -------
+
+    '''
     model_path = "my_model/hidden=28-rnn_layer=2-context_day=30-min_lr=0.0001.ckpt"
     buildings = ['1A', '1B', '1C', '1D', '1E', '2A', '2B', '2C', '2D', '2E']
     # 20210315 - 20210430
