@@ -1,4 +1,5 @@
-from utils import weather_crawler
+from wunderground_crawler.utils import weather_crawler
+from utils import dataset_generator
 import datetime
 import os
 import pandas as pd
@@ -27,16 +28,19 @@ def daily_update_weather(driver_path, save_folder, context_len=30):
 
 
 def main():
-    google_driver_path = "chromedriver_win32/chromedriver-112.exe"
-    history_weather_path = "../../data/weather/history"
+    google_driver_path = "./wunderground_crawler/chromedriver_win32/chromedriver-112.exe"
+    history_weather_path = "../data/weather/history"
+    electricity_path = "../data/electricity"
     if not os.path.exists(history_weather_path):
         os.mkdir(history_weather_path)
     daily_update_weather(google_driver_path, history_weather_path)
+    generator = dataset_generator(history_weather_path, electricity_path)
+    generator.compress_weather_data(f'{history_weather_path}/pre-processed_weather.csv')
 
 
 if __name__ == "__main__":
     # sleep the operating system for one day
     while True:
         main()
-        print("finished! sleep for one day")
+        print("finished! sleep for one day.")
         time.sleep(86400)

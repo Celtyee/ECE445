@@ -23,7 +23,6 @@ def generate_url(date):
     weather_station = 'ZSHC'
     url = "https://www.wunderground.com/history/daily/{0}/{1}/{2}".format(weather_station, 'date', str_date)
     # print()
-    # print(url)
     return url
 
 
@@ -66,7 +65,6 @@ class weather_crawler:
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36 Edg/93.0.961.52'
         }
-
         proxies = {'http': 'http://127.0.0.1:{}'.format(self.port), 'https': 'http://127.0.0.1:{}'.format(self.port)}
         resp = requests.get(url, headers=headers, proxies=proxies)
         if resp.status_code == 200:
@@ -98,10 +96,11 @@ class weather_crawler:
 
         query_list = [d for d in pd.date_range(struct_start_date, struct_end_date, freq='D')]
         df_list = []
-        for j in tqdm(range(len(query_list))):
+        for j in range(len(query_list)):
             i = query_list[j]
             date = i.strftime('%Y-%m-%d')
-            res, df_get = self.get_oneday_weather(generate_url(i))
+            url = generate_url(i)
+            res, df_get = self.get_oneday_weather(url)
             if res:
                 # df_get=df_get[~(df_get['Time'].isnull())] # 删除Time列为空NaN的行
                 df_get.insert(0, 'Date', date)
