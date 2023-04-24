@@ -105,7 +105,7 @@ class dataset_generator:
         mask_wtr = (df_wtr['timestamp'].dt.date >= start_date) & (df_wtr['timestamp'].dt.date <= end_date)
         weather_sub = df_wtr[mask_wtr][:]
         # only choose the column "timestamp", "Temperature", "Humidity", "Conditions"
-        weather_sub = weather_sub[['timestamp', 'Temperature', 'Humidity', 'Conditions']]
+        weather_sub = weather_sub[['timestamp', 'Temperature', 'Humidity', 'Condition']]
 
         for building in name_list:
             electricity_path = f'{self.history_electricity_folder}/{building}.csv'
@@ -272,16 +272,8 @@ class my_deepAR_model:
 
         '''
         data = pd.read_csv(csv_data_path)
-        data = data.drop(['Wind', 'Precip.', 'Wind Gust'], axis=1)
         data = data.fillna(method='pad')
         cutoff = data["time_idx"].max() - self.predictor_length
-
-        # print(f'The size of data is {len(data[lambda x: x["time_idx"] <= cutoff])}')
-        #
-        # print(f'The cutoff is {cutoff}')  # 359
-        # print(f'The max of time_idx is {data["time_idx"].max()}')  # 527
-        # print(f'The context length is {self.context_length}')  # 336
-        # print(f'The predictor length is {self.predictor_length}')  # 168
 
         history = TimeSeriesDataSet(
             data[lambda x: x.index <= cutoff],

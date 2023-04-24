@@ -20,8 +20,8 @@ class prediction_api:
         -------
         '''
 
-        num_day_context = 30
         num_day_pred = 7
+        num_day_context = 30
         buildings = ['1A', '1B', '1C', '1D', '1E', '2A', '2B', '2C', '2D', '2E']
 
         pred_date_start = datetime.datetime.now().date()
@@ -35,10 +35,9 @@ class prediction_api:
 
         electricity_path = "../data/electricity"
         future_weather_path = "../data/weather/future"
-        # TODO: use google forecast API to get the weather forecast data
         forecast_crawler = forecast_api()
-        forecast_crawler.crawl_forecast(pred_date_start, pred_date_end)
         pred_weather_csv = f'{future_weather_path}/future_weather.csv'
+        forecast_crawler.crawl_forecast(pred_date_start, pred_date_end, pred_weather_csv)
         future_generator = dataset_generator(future_weather_path, electricity_path)
 
         # # compress the future data. The data will be saved in future_weather_path/future_weather.csv
@@ -63,6 +62,7 @@ class prediction_api:
             df['time_idx'] = range(len(df))
             total_df_list.append(df)
         pred_data = pd.concat(total_df_list)
+        pred_data.fillna(0, inplace=True)
         save_folder_path = "../data/test"
         pred_data_path = f'{save_folder_path}/predict_data.csv'
         pred_data.to_csv(pred_data_path, index=False)
@@ -70,6 +70,7 @@ class prediction_api:
         # run prediction
         # print(f'read csv file from {pred_data_path}')
         model = my_deepAR_model(model_path, 24 * num_day_context, 24 * num_day_pred, buildings)
+        # FIXME: wrong input dataset for model.
         prediction = model.predict(pred_data_path)
 
         if not os.path.exists(save_folder_path):
@@ -79,7 +80,7 @@ class prediction_api:
         with open(prediction_path, "w") as f:
             json.dump(prediction, f)
 
-        # print("Prediction finishes")
+        print("Prediction finishes")
         return prediction
 
     def custom_prediction(self, model_path, pred_date, weather_date):
@@ -131,7 +132,7 @@ class prediction_api:
             total_df_list.append(df)
         input_df = pd.concat(total_df_list)
         save_folder_path = "../data/test"
-        pred_data_path = f'{save_folder_path}/predict_data.csv'
+        pred_data_path = f'{save_folder_path}/historical_predict_data.csv'
         input_df.to_csv(pred_data_path, index=False)
         # run prediction
         model = my_deepAR_model(model_path, 24 * context_len, 24 * prediction_len, buildings)
@@ -146,3 +147,9 @@ class prediction_api:
 
         # print("Prediction finishes")
         return prediction
+
+
+if __name__ == "__main__":
+    predictor = prediction_api()
+    model_path = "./my_model/hidden=28-rnn_layer=2-context_day=30-min_lr=0.0001.ckpt"
+    predictor.lastest_prediction(model_path)

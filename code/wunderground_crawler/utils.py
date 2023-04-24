@@ -113,7 +113,7 @@ class weather_crawler:
 
 
 class forecast_api:
-    def crawl_forecast(self, start_date, end_date):
+    def crawl_forecast(self, start_date, end_date, csv_save_path):
         '''
         crawl the forecast data from visualcrossing
         Parameters
@@ -141,7 +141,6 @@ class forecast_api:
         # set column as the first row
         df.columns = df.iloc[0]
         df = df.drop(0)
-        csv_save_path = "../../data/weather/future/future_weather.csv"
         # turn the datetime into timestamp type
         df['datetime'] = pd.to_datetime(df['datetime'])
         df = df.rename(columns={'datetime': 'timestamp',
