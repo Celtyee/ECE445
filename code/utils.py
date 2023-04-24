@@ -80,7 +80,7 @@ class dataset_generator:
         self.history_weather_folder = weather
         self.history_electricity_folder = electricity
 
-    def generate_dataset(self, building_list, start_date, end_date, weather):
+    def generate_dataset(self, building_list, start_date, end_date, weather, start_idx, weather_stride):
         '''
         generate the electricity usage dataset consists of weather condition, building ID, electricity usage.
 
@@ -89,8 +89,9 @@ class dataset_generator:
         building_list: list of strings
         start_date: datetime.datetime.date() data
         end_date: datetime.datetime.date() data
-        weather: compressed weather data file
-
+        weather: compressed weather data file path, str.
+        start_idx: The idx of valid weather start, int.
+        weather_stride: stride to the weather, int.
         Returns
         -------
 
@@ -98,8 +99,7 @@ class dataset_generator:
         name_list = building_list
         df_list = []
         # generate the weather data for 10 buildings
-        # FIXME: there are weather data lost in generating the weather data for 10 buildings for the end of the day
-        df_wtr = pd.read_csv(weather)[1::2]
+        df_wtr = pd.read_csv(weather)[start_idx::weather_stride]
         df_wtr['timestamp'] = pd.to_datetime(df_wtr['timestamp'])
 
         mask_wtr = (df_wtr['timestamp'].dt.date >= start_date) & (df_wtr['timestamp'].dt.date <= end_date)
@@ -189,8 +189,8 @@ class dataset_generator:
 
 # define the network and find the optimal learning rate for the specific task
 class train_api:
-    def train_model(self, time_series_dataset, dataloader_train, dataloader_val, hidden_size=30, rnn_layers=2,
-                    save_folder="./", min_lr=1e-5):
+    def train_model(self, time_series_dataset, dataloader_train, dataloader_val, hidden_size, rnn_layers,
+                    model_name, min_lr):
         trainer = pl.Trainer(gpus=1, gradient_clip_val=1e-1)
         net = DeepAR.from_dataset(
             time_series_dataset, learning_rate=3e-2, hidden_size=hidden_size, rnn_layers=rnn_layers
@@ -205,10 +205,10 @@ class train_api:
             max_lr=1e0,
             early_stop_threshold=100
         )
-
+        save_folder_path = f"../data/train_recorder/{model_name}"
         print(f"suggested learning rate: {res.suggestion()}")
         fig = res.plot(show=True, suggest=True)
-        fig.savefig(f"{save_folder}/res.png")
+        fig.savefig(f"{save_folder_path}/res.png")
         net.hparams.learning_rate = res.suggestion()
 
         # start train
@@ -228,7 +228,7 @@ class train_api:
             train_dataloaders=dataloader_train,
             val_dataloaders=dataloader_val,
         )
-        ckpt_path = f"{save_folder}/hidden={hidden_size}_rnn={rnn_layers}_lr={min_lr}.ckpt"
+        ckpt_path = f"{save_folder_path}/{model_name}.ckpt"
         trainer.save_checkpoint(ckpt_path)
         return net, ckpt_path
 

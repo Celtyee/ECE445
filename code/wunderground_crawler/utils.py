@@ -1,3 +1,5 @@
+import sys
+import csv
 import requests
 import datetime
 import os
@@ -109,3 +111,36 @@ class weather_crawler:
                 df_backup.to_csv(f'{self.daily_weather_folder}/weather{date}.csv', index=False)
             else:
                 print(date + 'crawl fails')
+
+
+class forecast_api:
+    def crawl_forecast(self, start_date, end_date):
+        '''
+        crawl the forecast data from visualcrossing
+        Parameters
+        ----------
+        start_date: start_date of forecasting, datetime.datetime.date.
+        end_date: end_date of forecasting, datetime.datetime.date.
+
+        Returns
+        -------
+        The forecast dataframe, pandas dataframe.
+        '''
+        # turn into the form of 'yyyy-mm-dd'
+        start_date = start_date.strftime('%Y-%m-%d')
+        end_date = end_date.strftime('%Y-%m-%d')
+        response = requests.request("GET",
+                                    f"https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/30.50938%2C%20120.68102/{start_date}/{end_date}?unitGroup=us&include=hours&key=WPBAQQSNZTMMARJ2TFEKBGYFL&contentType=csv")
+        if response.status_code != 200:
+            print('Unexpected Status code: ', response.status_code)
+            sys.exit()
+
+            # Parse the results as CSV
+        CSVText = csv.reader(response.text.splitlines(), delimiter=',', quotechar='"')
+        # turn it into pandas dataframe
+        df = pd.DataFrame(CSVText)
+        # add an empty row between each row
+
+        csv_save_path = "../../data/weather/future/future_weather.csv"
+        df.to_csv(csv_save_path, index=False)
+        return csv_save_path

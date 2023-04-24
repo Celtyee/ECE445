@@ -53,23 +53,14 @@ def train(data, hidden_size, rnn_layer, context_day, min_lr):
     val_dataloader = validation.to_dataloader(
         train=False, batch_size=batch_size, num_workers=0, batch_sampler="synchronized"
     )
-
-    # print(f"Number of batches: {len(val_dataloader)}")
-    # print(f"Batch size: {val_dataloader.batch_size}")
-
-    # # calculate baseline absolute error
-    # actuals = torch.cat([y[0] for x, y in iter(val_dataloader)])
-    # baseline_predictions = Baseline().predict(val_dataloader)
-    # # baseline for being beat
-    # print(SMAPE()(baseline_predictions, actuals))
-
-    save_folder_path = f"../data/train_recorder/hidden={hidden_size}-rnn_layer={rnn_layer}-context_day={context_day}-min_lr={min_lr}"
+    model_name = f"hidden={hidden_size}-rnn_layer={rnn_layer}-context_day={context_day}-min_lr={min_lr}"
+    save_folder_path = f"../data/train_recorder/{model_name}"
     if not os.path.exists(save_folder_path):
         os.mkdir(save_folder_path)
 
     trainer = train_api()
     net, ckpt_path = trainer.train_model(training, train_dataloader, val_dataloader, hidden_size, rnn_layer,
-                                         save_folder_path,
+                                         model_name,
                                          min_lr)
     loss = trainer.validation_model(net, save_folder_path, validation, val_dataloader, ckpt_path)
     return loss

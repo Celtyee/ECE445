@@ -1,9 +1,0 @@
-2023-04-23 21:54:39,938 - train_logger - INFO - Pytorch-version=1.13.1-main
-2023-04-23 21:54:39,938 - train_logger - INFO - Pytorch-forecasting=0.10.2-main
-2023-04-23 21:54:39,938 - train_logger - INFO - Pytorch-lightning=1.7.0-main
-2023-04-23 21:54:39,938 - train_logger - CRITICAL - Training starts at 2023-04-23 21:54:39.938514-main
-2023-04-23 21:54:39,990 - train_logger - CRITICAL - hidden_size=30, rnn_layers=2, context_day=30, min_lr=0.0001, pl_seed = 42-main
-2023-04-23 22:00:13,140 - train_logger - CRITICAL - loss = 11.3262300491333-main
-2023-04-23 22:00:13,141 - train_logger - CRITICAL - hidden_size=30, rnn_layers=2, context_day=30, min_lr=0.001, pl_seed = 42-main
-2023-04-23 22:03:17,479 - train_logger - CRITICAL - loss = 14.753491401672363-main
-2023-04-23 22:03:17,479 - train_logger - CRITICAL - hidden_size=30, rnn_layers=2, context_day=30, min_lr=0.01, pl_seed = 42-main

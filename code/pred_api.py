@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import json
 from utils import dataset_generator, my_deepAR_model
+from wunderground_crawler.utils import forecast_api
 
 
 class prediction_api:
@@ -12,8 +13,8 @@ class prediction_api:
         The function will crawl data from google forecast website.
 
         Parameters
-        ----------3
-        model_path: pytorch checkpoint for training
+        -------
+        model_path: pytorch checkpoint for training, e.g. "./model/model_epoch_10.ckpt"
 
         Returns
         -------
@@ -28,30 +29,22 @@ class prediction_api:
 
         hist_date_start = pred_date_start - datetime.timedelta(days=num_day_context + num_day_pred + 1)
         hist_date_end = pred_date_start - datetime.timedelta(days=1)
-
+        #
         print(f'forecast date {pred_date_start} - {pred_date_end}')
         print(f'historical date {hist_date_start} - {hist_date_end}')
 
         electricity_path = "../data/electricity"
         future_weather_path = "../data/weather/future"
         # TODO: use google forecast API to get the weather forecast data
-        # if crawl_forecast:
-        #     # crawl weather forecast data from wunderground
-        #
-        #     driver_path = "wunderground_crawler/chromedriver_win32/chromedriver-112.exe"
-        #
-        #     crawler = wunderground_crawler.weather_crawler(driver_path, future_weather_path)
-        #     crawler.get_daily_weather(start_date=pred_date_start.strftime("%Y%m%d"),
-        #                               end_date=pred_date_end.strftime("%Y%m%d"))
-
-        # compress the future data. The data will be saved in future_weather_path/future_weather.csv
+        forecast_crawler = forecast_api()
+        forecast_crawler.crawl_forecast(pred_date_start, pred_date_end)
         pred_weather_csv = f'{future_weather_path}/future_weather.csv'
         future_generator = dataset_generator(future_weather_path, electricity_path)
-        future_generator.compress_weather_data(pred_weather_csv)
 
-        # get time_varying_known_real data for TimeSeriesDataSet
-
-        pred_df_list = future_generator.generate_dataset(buildings, pred_date_start, pred_date_end, pred_weather_csv)
+        # # compress the future data. The data will be saved in future_weather_path/future_weather.csv
+        # future_generator.compress_weather_data(pred_weather_csv)
+        pred_df_list = future_generator.generate_dataset(buildings, pred_date_start, pred_date_end, pred_weather_csv,
+                                                         start_idx=0, weather_stride=1)
 
         # get historical whether data and electricity data
         history_weather_path = "../data/weather/history"
@@ -60,7 +53,7 @@ class prediction_api:
         historical_generator = dataset_generator(history_weather_path, electricity_path)
 
         hist_df_list = historical_generator.generate_dataset(buildings, hist_date_start, hist_date_end,
-                                                             hist_weather_csv)
+                                                             hist_weather_csv, start_idx=1, weather_stride=2)
 
         # combine historical data and forecast weather data together as the condition data
         total_df_list = []
@@ -86,7 +79,7 @@ class prediction_api:
         with open(prediction_path, "w") as f:
             json.dump(prediction, f)
 
-        print("Prediction finishes")
+        # print("Prediction finishes")
         return prediction
 
     def custom_prediction(self, model_path, pred_date, weather_date):
@@ -115,8 +108,8 @@ class prediction_api:
         hist_date_start = datetime.datetime.strptime(weather_date, "%Y%m%d").date()
         hist_date_end = hist_date_start + datetime.timedelta(days=context_len + prediction_len)
 
-        print(f'forecast date {pred_date_start} - {pred_date_end}')
-        print(f'historical date {hist_date_start} - {hist_date_end}')
+        # print(f'forecast date {pred_date_start} - {pred_date_end}')
+        # print(f'historical date {hist_date_start} - {hist_date_end}')
 
         history_weather_path = "../data/weather/history"
         electricity_path = "../data/electricity"
@@ -124,10 +117,10 @@ class prediction_api:
         historical_generator = dataset_generator(history_weather_path, electricity_path)
 
         hist_df_list = historical_generator.generate_dataset(buildings, hist_date_start, hist_date_end,
-                                                             hist_weather_csv)
+                                                             hist_weather_csv, start_idx=1, weather_stride=2)
 
         pred_df_list = historical_generator.generate_dataset(buildings, pred_date_start, pred_date_end,
-                                                             hist_weather_csv)
+                                                             hist_weather_csv, start_idx=1, weather_stride=2)
 
         # combine historical data and forecast weather data together as the condition data
         total_df_list = []
@@ -151,5 +144,5 @@ class prediction_api:
         with open(prediction_path, "w") as f:
             json.dump(prediction, f)
 
-        print("Prediction finishes")
+        # print("Prediction finishes")
         return prediction
