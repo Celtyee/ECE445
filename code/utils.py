@@ -104,6 +104,8 @@ class dataset_generator:
 
         mask_wtr = (df_wtr['timestamp'].dt.date >= start_date) & (df_wtr['timestamp'].dt.date <= end_date)
         weather_sub = df_wtr[mask_wtr][:]
+        # only choose the column "timestamp", "Temperature", "Humidity", "Conditions"
+        weather_sub = weather_sub[['timestamp', 'Temperature', 'Humidity', 'Conditions']]
 
         for building in name_list:
             electricity_path = f'{self.history_electricity_folder}/{building}.csv'
