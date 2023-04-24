@@ -95,7 +95,6 @@ def main():
         os.mkdir("../data/train_recorder")
     train_dataset_path = "../data/train/train.csv"
     data = pd.read_csv(train_dataset_path)
-    data = data.drop(['Wind', 'Precip.', 'Wind Gust'], axis=1)
     data = data.fillna(method="ffill")
     data = data.astype(dict(Building=str))
 

@@ -129,18 +129,26 @@ class forecast_api:
         # turn into the form of 'yyyy-mm-dd'
         start_date = start_date.strftime('%Y-%m-%d')
         end_date = end_date.strftime('%Y-%m-%d')
-        response = requests.request("GET",
-                                    f"https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/30.50938%2C%20120.68102/{start_date}/{end_date}?unitGroup=us&include=hours&key=WPBAQQSNZTMMARJ2TFEKBGYFL&contentType=csv")
+        url = f"https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/30.50938%2C%20120.68102/{start_date}/{end_date}?unitGroup=us&include=hours&key=WPBAQQSNZTMMARJ2TFEKBGYFL&contentType=csv"
+        response = requests.request("GET", url)
         if response.status_code != 200:
             print('Unexpected Status code: ', response.status_code)
+            # raise a exception
             sys.exit()
-
-            # Parse the results as CSV
+        # Parse the results as CSV
         CSVText = csv.reader(response.text.splitlines(), delimiter=',', quotechar='"')
         # turn it into pandas dataframe
         df = pd.DataFrame(CSVText)
-        # add an empty row between each row
-
+        # set column as the first row
+        df.columns = df.iloc[0]
+        df = df.drop(0)
         csv_save_path = "../../data/weather/future/future_weather.csv"
+        # turn the datetime into timestamp type
+        df['datetime'] = pd.to_datetime(df['datetime'])
+        df = df.rename(columns={'datetime': 'timestamp',
+                                'temp': 'Temperature',
+                                'Dew Point': 'Dew Point',
+                                'humidity': 'Humidity',
+                                'conditions': 'Condition'})
         df.to_csv(csv_save_path, index=False)
         return csv_save_path
