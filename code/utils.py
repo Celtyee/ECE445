@@ -192,7 +192,7 @@ class dataset_generator:
 # define the network and find the optimal learning rate for the specific task
 class train_api:
     def train_model(self, time_series_dataset, dataloader_train, dataloader_val, hidden_size, rnn_layers,
-                    model_name, min_lr):
+                    model_name, min_lr, save_folder_path):
         trainer = pl.Trainer(gpus=1, gradient_clip_val=1e-1)
         net = DeepAR.from_dataset(
             time_series_dataset, learning_rate=3e-2, hidden_size=hidden_size, rnn_layers=rnn_layers
@@ -207,7 +207,6 @@ class train_api:
             max_lr=1e0,
             early_stop_threshold=100
         )
-        save_folder_path = f"../data/train_recorder/{model_name}"
         print(f"suggested learning rate: {res.suggestion()}")
         fig = res.plot(show=True, suggest=True)
         fig.savefig(f"{save_folder_path}/res.png")
@@ -234,7 +233,7 @@ class train_api:
         trainer.save_checkpoint(ckpt_path)
         return net, ckpt_path
 
-    def validation_model(self, net, save_folder, timeseries_val, dataloader_val, ckpt_path):
+    def validation_model(self, net, save_folder_path, timeseries_val, dataloader_val, ckpt_path):
         model = DeepAR.load_from_checkpoint(ckpt_path)
         actuals = torch.cat([y[0] for x, y in iter(dataloader_val)])
         predictions = model.predict(dataloader_val)
@@ -247,7 +246,7 @@ class train_api:
                                   add_loss_to_title=True)
             building = series.iloc[idx]
             plt.suptitle(f"Building: {building}")
-            plt.savefig(f"{save_folder}/plot_{building}_encoder.png")
+            plt.savefig(f"{save_folder_path}/plot_{building}_encoder.png")
 
         return loss
 

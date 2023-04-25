@@ -25,3 +25,15 @@ To generate the prediction of hourly electricity usage in next week, run
 `python main.py`
 
 The file _prediction.json_ contains the result for each building's next week hourly electricity usage.
+
+See the performance of model on ZJUI buildings for predicting 1 week.
+
+`python test_shell.py buildings_1week`
+
+See the performance of model on ZJUI buildings for predicting 1 day.
+
+`python test_shell.py buildings_24hours`
+
+See the performance of model on ZJUI campus for predicting 1 day, where the data comes from electricity company.
+
+`python test_shell.py campus_24hours`

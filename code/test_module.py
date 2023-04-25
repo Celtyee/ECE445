@@ -10,7 +10,7 @@ import logging
 import matplotlib.pyplot as plt
 
 
-def test(model_name):
+def test(model_name, task_name):
     '''
     Test the performance of model on the test data set from 20210315 - 20210430
     Parameters
@@ -21,8 +21,9 @@ def test(model_name):
 
     '''
     # select the ".ckpt" file path under the folder f"../data/train_recorder/{model_name}"
-    model_path = os.path.join(f"../data/train_recorder/{model_name}",
-                              [name for name in os.listdir(f"../data/train_recorder/{model_name}") if
+    train_recorder_folder = f"../data/train/{task_name}/{model_name}"
+    model_path = os.path.join(train_recorder_folder,
+                              [name for name in os.listdir(train_recorder_folder) if
                                name.endswith(".ckpt")][0])
     # data prediction for building 1A.
     buildings = ['1A', '1B', '1C', '1D', '1E', '2A', '2B', '2C', '2D', '2E']
@@ -128,4 +129,5 @@ def test(model_name):
 
 if __name__ == "__main__":
     model_name = sys.argv[1]
-    test(model_name)
+    task_name = sys.argv[2]
+    test(model_name, task_name)

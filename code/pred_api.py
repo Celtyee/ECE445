@@ -131,6 +131,8 @@ class prediction_api:
             total_df_list.append(df)
         input_df = pd.concat(total_df_list)
         save_folder_path = "../data/test"
+        if not os.path.exists(save_folder_path):
+            os.mkdir(save_folder_path)
         pred_data_path = f'{save_folder_path}/historical_predict_data.csv'
         input_df.to_csv(pred_data_path, index=False)
         # run prediction

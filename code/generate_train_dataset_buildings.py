@@ -16,7 +16,7 @@ def main():
     train_df_list = generator.generate_dataset(buildings, start_date, end_date, whole_weather_path, start_idx=1,
                                                weather_stride=2)
     train_df = pd.concat(train_df_list)
-    train_path = "../data/train/train.csv"
+    train_path = "../data/train/train_buildings.csv"
     train_df = train_df.fillna(method="ffill")
     train_df.to_csv(train_path, index=False)
 
