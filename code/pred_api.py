@@ -7,7 +7,7 @@ from wunderground_crawler.utils import forecast_api
 
 
 class prediction_api:
-    def lastest_prediction(self, model_path):
+    def lastest_prediction(self, model_path, context_len):
         '''
         forecast the electricity load from [pred_day, pred_day+num_day_pred). Save the prediction in ./prediction.json.
         The function will crawl data from google forecast website.
@@ -15,19 +15,19 @@ class prediction_api:
         Parameters
         -------
         model_path: pytorch checkpoint for training, e.g. "./model/model_epoch_10.ckpt"
+        context_len: context_length
 
         Returns
         -------
         '''
 
         num_day_pred = 7
-        num_day_context = 30
         buildings = ['1A', '1B', '1C', '1D', '1E', '2A', '2B', '2C', '2D', '2E']
 
         pred_date_start = datetime.datetime.now().date()
         pred_date_end = pred_date_start + datetime.timedelta(days=num_day_pred - 1)
 
-        hist_date_start = pred_date_start - datetime.timedelta(days=num_day_context + num_day_pred + 1)
+        hist_date_start = pred_date_start - datetime.timedelta(days=context_len + num_day_pred + 1)
         hist_date_end = pred_date_start - datetime.timedelta(days=1)
         #
         print(f'forecast date {pred_date_start} - {pred_date_end}')
@@ -69,7 +69,7 @@ class prediction_api:
 
         # run prediction
         # print(f'read csv file from {pred_data_path}')
-        model = my_deepAR_model(model_path, 24 * num_day_context, 24 * num_day_pred, buildings)
+        model = my_deepAR_model(model_path, 24 * context_len, 24 * num_day_pred, buildings)
         # FIXME: wrong input dataset for model.
         prediction = model.predict(pred_data_path)
 
@@ -83,7 +83,7 @@ class prediction_api:
         print("Prediction finishes")
         return prediction
 
-    def custom_prediction(self, model_path, pred_date, weather_date):
+    def custom_prediction(self, model_path, pred_date, weather_date, context_len) -> dict:
         '''
         allow users to use custom weather as the input data for the prediction of the start day.
         The prediction result is stored in the file history_prediction.json.
@@ -99,7 +99,6 @@ class prediction_api:
         prediction: the prediction result of custom context weather condition data, dict.
         '''
         prediction_len = 7
-        context_len = 30
         # generate the input dataset
         buildings = ['1A', '1B', '1C', '1D', '1E', '2A', '2B', '2C', '2D', '2E']
 
@@ -152,4 +151,4 @@ class prediction_api:
 if __name__ == "__main__":
     predictor = prediction_api()
     model_path = "./my_model/hidden=28-rnn_layer=2-context_day=30-min_lr=0.0001.ckpt"
-    predictor.lastest_prediction(model_path)
+    predictor.lastest_prediction(model_path, 30)
