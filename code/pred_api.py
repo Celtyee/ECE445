@@ -101,6 +101,9 @@ class prediction_api:
         prediction: the prediction result of custom context weather condition data, dict.
         '''
         prediction_len = 7
+        demo_path = "../data/demo_prediction"
+        if not os.path.exists(demo_path):
+            os.mkdir(demo_path)
         # generate the input dataset
         buildings = ['1A', '1B', '1C', '1D', '1E', '2A', '2B', '2C', '2D', '2E']
 
@@ -145,7 +148,7 @@ class prediction_api:
         if not os.path.exists(save_folder_path):
             os.mkdir(save_folder_path)
 
-        prediction_path = "./historical_prediction.json"
+        prediction_path = f"{demo_path}/pred_date={pred_date}-weather_date={weather_date}_prediction.json"
         with open(prediction_path, "w") as f:
             json.dump(prediction, f)
 
