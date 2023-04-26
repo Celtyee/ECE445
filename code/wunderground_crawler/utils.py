@@ -26,7 +26,7 @@ def generate_url(date):
     return url
 
 
-class weather_crawler:
+class wunderground_crawler:
     def __init__(self, selenium_driver_path, weather_save_folder, port=7890):
         cache_path = "./crawler_cache"
         if not os.path.exists(cache_path):
@@ -112,7 +112,7 @@ class weather_crawler:
                 print(date + 'crawl fails')
 
 
-class forecast_api:
+class visualcrossing_crawler:
     def crawl_forecast(self, start_date, end_date, csv_save_path):
         '''
         crawl the forecast data from visualcrossing
@@ -150,3 +150,7 @@ class forecast_api:
                                 'conditions': 'Condition'})
         df.to_csv(csv_save_path, index=False)
         return csv_save_path
+
+    # TODO: use the visualcrossing api to crawl the history data.
+    def crawl_history(self, start_date, end_date, csv_save_path):
+        pass

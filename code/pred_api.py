@@ -7,6 +7,14 @@ from wunderground_crawler.utils import forecast_api
 
 
 class prediction_api:
+    def __init__(self):
+        self.input_path = "../data/input"
+        self.output_path = "../data/output"
+        if not os.path.exists(self.input_path):
+            os.mkdir(self.input_path)
+        if not os.path.exists(self.output_path):
+            os.mkdir(self.output_path)
+
     def lastest_prediction(self, model_path, context_len) -> dict:
         '''
         forecast the electricity load from [pred_day, pred_day+num_day_pred). Save the prediction in ./prediction.json.
@@ -26,7 +34,6 @@ class prediction_api:
 
         pred_date_start = datetime.datetime.now().date()
         # debug for the date 2021-03-15
-        pred_date_start = datetime.datetime.strptime("20210315", "%Y%m%d").date()
 
         pred_date_end = pred_date_start + datetime.timedelta(days=num_day_pred - 1)
 
@@ -66,17 +73,13 @@ class prediction_api:
             total_df_list.append(df)
         pred_data = pd.concat(total_df_list)
         pred_data.fillna(0, inplace=True)
-        save_folder_path = "../data/test"
-        pred_data_path = f'{save_folder_path}/predict_data.csv'
+        pred_data_path = f'{self.input_path}/latest_input_data.csv'
         pred_data.to_csv(pred_data_path, index=False)
 
         # run prediction
         # print(f'read csv file from {pred_data_path}')
         model = my_deepAR_model(model_path, 24 * context_len, 24 * num_day_pred, buildings)
         prediction = model.predict(pred_data_path)
-
-        if not os.path.exists(save_folder_path):
-            os.mkdir(save_folder_path)
 
         prediction_path = "./prediction.json"
         with open(prediction_path, "w") as f:
@@ -101,9 +104,6 @@ class prediction_api:
         prediction: the prediction result of custom context weather condition data, dict.
         '''
         prediction_len = 7
-        demo_path = "../data/demo_prediction"
-        if not os.path.exists(demo_path):
-            os.mkdir(demo_path)
         # generate the input dataset
         buildings = ['1A', '1B', '1C', '1D', '1E', '2A', '2B', '2C', '2D', '2E']
 
@@ -136,19 +136,14 @@ class prediction_api:
             df['time_idx'] = range(len(df))
             total_df_list.append(df)
         input_df = pd.concat(total_df_list)
-        save_folder_path = "../data/test"
-        if not os.path.exists(save_folder_path):
-            os.mkdir(save_folder_path)
-        pred_data_path = f'{save_folder_path}/historical_predict_data.csv'
+
+        pred_data_path = f'{self.input_path}/input_data-pred_date={pred_date}-weather_start={weather_date}.csv'
         input_df.to_csv(pred_data_path, index=False)
         # run prediction
         model = my_deepAR_model(model_path, 24 * context_len, 24 * prediction_len, buildings)
         prediction = model.predict(pred_data_path)
 
-        if not os.path.exists(save_folder_path):
-            os.mkdir(save_folder_path)
-
-        prediction_path = f"{demo_path}/pred_date={pred_date}-weather_date={weather_date}_prediction.json"
+        prediction_path = f"{self.output_path}/prediction-pred_date={pred_date}-weather_date={weather_date}.json"
         with open(prediction_path, "w") as f:
             json.dump(prediction, f)
 
