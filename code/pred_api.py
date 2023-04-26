@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import json
 from utils import dataset_generator, my_deepAR_model
-from wunderground_crawler.utils import forecast_api
+from wunderground_crawler.utils import visualcrossing_crawler
 
 
 class prediction_api:
@@ -45,7 +45,7 @@ class prediction_api:
 
         electricity_path = "../data/electricity"
         future_weather_path = "../data/weather/future"
-        forecast_crawler = forecast_api()
+        forecast_crawler = visualcrossing_crawler()
         pred_weather_csv = f'{future_weather_path}/future_weather.csv'
         forecast_crawler.crawl_forecast(pred_date_start, pred_date_end, pred_weather_csv)
         future_generator = dataset_generator(future_weather_path, electricity_path)
@@ -88,7 +88,7 @@ class prediction_api:
         print("Prediction finishes")
         return prediction
 
-    def custom_prediction(self, model_path, pred_date, weather_date, context_len) -> dict:
+    def custom_prediction(self, model_path, pred_date, weather_date, context_len, prediction_len=7) -> dict:
         '''
         allow users to use custom weather as the input data for the prediction of the start day.
         The prediction result is stored in the file history_prediction.json.
@@ -103,7 +103,6 @@ class prediction_api:
         -------
         prediction: the prediction result of custom context weather condition data, dict.
         '''
-        prediction_len = 7
         # generate the input dataset
         buildings = ['1A', '1B', '1C', '1D', '1E', '2A', '2B', '2C', '2D', '2E']
 

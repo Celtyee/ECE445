@@ -62,25 +62,26 @@ def test(model_name, task_name, prediction_len):
     logger.critical(f"context length: {context_len}\n")
 
     metrics_mat = np.zeros((len(buildings), 3))  # record the metrics of each building.
-    for idx in range(len(buildings)):
-        building = buildings[idx]
-        test_y = np.array([])
-        test_pred = np.array([])
-        for i in range(len(pred_date_list)):
-            pred_date = pred_date_list[i]
-            # print(pred_date)
-            pred_day = pred_date.strftime("%Y%m%d")
+    test_y = np.zeros((len(buildings), len(pred_date_list), 24 * prediction_len))
+    test_pred = np.zeros((len(buildings), len(pred_date_list), 24 * prediction_len))
+    prediction = prediction_api()
+    for i in range(len(pred_date_list)):
+        pred_date = pred_date_list[i]
+        # print(pred_date)
+        pred_day = pred_date.strftime("%Y%m%d")
 
-            weather_start_date = pred_date - datetime.timedelta(days=num_day_context + 1)
-            weather_start_date = weather_start_date.strftime("%Y%m%d")
-
-            prediction = prediction_api()
-            prediction_result = prediction.custom_prediction(model_path, pred_day, weather_start_date, context_len)
-            # set the logger name as "metrics"
-            start_date = datetime.datetime.strptime(pred_day, "%Y%m%d")
-            end_date = start_date + datetime.timedelta(days=prediction_len - 1)
+        weather_start_date = pred_date - datetime.timedelta(days=num_day_context + 1)
+        weather_start_date = weather_start_date.strftime("%Y%m%d")
+        prediction_result = prediction.custom_prediction(model_path, pred_day, weather_start_date, context_len,
+                                                         prediction_len)
+        # set the logger name as "metrics"
+        start_date = datetime.datetime.strptime(pred_day, "%Y%m%d")
+        end_date = start_date + datetime.timedelta(days=prediction_len - 1)
+        for idx in range(len(buildings)):
+            building = buildings[idx]
             building_path = f"../data/electricity/{building}.csv"
             df_electricity = pd.read_csv(building_path)
+            df_electricity['time'] = pd.to_datetime(df_electricity['time']) - datetime.timedelta(hours=1)
             df_electricity['time'] = pd.to_datetime(df_electricity['time']) + datetime.timedelta(hours=8)
 
             mask_ele = (df_electricity['time'].dt.date >= start_date.date()) & (
@@ -91,41 +92,43 @@ def test(model_name, task_name, prediction_len):
             df_electricity.loc[val_mask, 'val'] = np.nan
             # fill the nan with the previous value
             df_electricity = df_electricity.fillna(method="ffill")
-            usage_y = df_electricity[mask_ele]['val'][1:]
+            usage_y = df_electricity[mask_ele]['val'][:]
             usage_y = np.array(usage_y)[:24 * prediction_len]
             usage_pred = np.array(prediction_result[building])
-            test_y = np.append(test_y, usage_y)
-            test_pred = np.append(test_pred, usage_pred)
+            test_y[idx, i, :] = usage_y
+            test_pred[idx, i, :] = usage_pred
 
-        test_y = test_y.flatten()
-        test_pred = test_pred.flatten()
+    for idx in range(len(buildings)):
+        # flatten the last two dimension
+        building_test_y = test_y[idx, :, :].flatten()
+        building_test_pred = test_pred[idx, :, :].flatten()
         # calculate the RMSE, MAPE, MAE
-        rmse = np.sqrt(mean_squared_error(test_y, test_pred))
-        mape = np.mean(np.abs((test_y - test_pred) / test_y)) * 100
-        mae = mean_absolute_error(test_y, test_pred)
+        rmse = np.sqrt(mean_squared_error(building_test_y, building_test_pred))
+        mape = np.mean(np.abs((building_test_y - building_test_pred) / building_test_y)) * 100
+        mae = mean_absolute_error(building_test_y, building_test_pred)
         metrics_mat[idx, :] = [rmse, mape, mae]
 
-        # draw the graph of the RMSE, MAPE, MAE for 10 buildings
-        metrics_list = ["RMSE", "MAPE", "MAE"]
-        test_folder_path = f"../data/test/{task_name}/{model_name}"
-        if not os.path.exists(test_folder_path):
-            os.makedirs(test_folder_path)
+    # draw the graph of the RMSE, MAPE, MAE for 10 buildings
+    metrics_list = ["RMSE", "MAPE", "MAE"]
+    test_folder_path = f"../data/test/{task_name}/{model_name}"
+    if not os.path.exists(test_folder_path):
+        os.makedirs(test_folder_path)
 
-        # draw the graph for each metrics on 10 buildings
-        for m in range(len(metrics_list)):
-            plt.figure()
-            plt.plot(buildings, metrics_mat[:, m], label=metrics_list[m])
-            # show the data point on the graph
-            for i in range(len(buildings)):
-                plt.scatter(i, metrics_mat[i, m], c="black")
-                plt.annotate(metrics_mat[i, m], (i, metrics_mat[i, m]))
-            # set the title, xlabel, ylabel, legend, grid
-            plt.title(f"{metrics_list[m]}")
-            plt.xlabel("Prediction Day")
-            plt.ylabel("Value")
-            plt.legend()
-            plt.grid()
-            plt.savefig(f"{test_folder_path}/{metrics_list[m]}.png")
+    # draw the graph for each metrics on 10 buildings
+    for m in range(len(metrics_list)):
+        plt.figure()
+        plt.plot(buildings, metrics_mat[:, m], label=metrics_list[m])
+        # show the data point on the graph
+        for i in range(len(buildings)):
+            plt.scatter(i, metrics_mat[i, m], c="black")
+            plt.annotate(metrics_mat[i, m], (i, metrics_mat[i, m]))
+        # set the title, xlabel, ylabel, legend, grid
+        plt.title(f"{metrics_list[m]}")
+        plt.xlabel("Prediction Day")
+        plt.ylabel("Value")
+        plt.legend()
+        plt.grid()
+        plt.savefig(f"{test_folder_path}/{metrics_list[m]}.png")
 
 
 if __name__ == "__main__":

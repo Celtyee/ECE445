@@ -110,9 +110,8 @@ class dataset_generator:
         for building in name_list:
             electricity_path = f'{self.history_electricity_folder}/{building}.csv'
             df_ele = pd.read_csv(electricity_path)
-
-            # Turn from UTC into UTC+8
-            df_ele['time'] = pd.to_datetime(df_ele['time']) + datetime.timedelta(hours=8)
+            # Turn from UTC into UTC+8. -1 to align the val so that each values represent the electricity consumption in the next data.
+            df_ele['time'] = pd.to_datetime(df_ele['time']) + datetime.timedelta(hours=8) - datetime.timedelta(hours=1)
 
             mask_ele = (df_ele['time'].dt.date >= start_date) & (df_ele['time'].dt.date <= end_date)
             # set the 'val' column of the dataframe to nan if it is less or equal to 0
@@ -122,7 +121,7 @@ class dataset_generator:
             df_ele = df_ele.fillna(method="ffill")
 
             # print(f"the number of losing electricity data for building {building} is {np.sum(val_mask)}")
-            electricity_sub = df_ele[mask_ele]['val'][1:]
+            electricity_sub = df_ele[mask_ele]['val']
             training_df = pd.concat((weather_sub.reset_index(drop=True), electricity_sub.reset_index(drop=True)),
                                     axis=1)
 
