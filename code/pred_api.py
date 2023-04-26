@@ -25,6 +25,9 @@ class prediction_api:
         buildings = ['1A', '1B', '1C', '1D', '1E', '2A', '2B', '2C', '2D', '2E']
 
         pred_date_start = datetime.datetime.now().date()
+        # debug for the date 2021-03-15
+        pred_date_start = datetime.datetime.strptime("20210315", "%Y%m%d").date()
+
         pred_date_end = pred_date_start + datetime.timedelta(days=num_day_pred - 1)
 
         hist_date_start = pred_date_start - datetime.timedelta(days=context_len + num_day_pred + 1)
@@ -70,7 +73,6 @@ class prediction_api:
         # run prediction
         # print(f'read csv file from {pred_data_path}')
         model = my_deepAR_model(model_path, 24 * context_len, 24 * num_day_pred, buildings)
-        # FIXME: wrong input dataset for model.
         prediction = model.predict(pred_data_path)
 
         if not os.path.exists(save_folder_path):
@@ -105,11 +107,12 @@ class prediction_api:
         pred_date_start = datetime.datetime.strptime(pred_date, "%Y%m%d").date()
         pred_date_end = pred_date_start + datetime.timedelta(days=prediction_len - 1)
 
-        hist_date_start = datetime.datetime.strptime(weather_date, "%Y%m%d").date()
+        hist_date_start = datetime.datetime.strptime(weather_date, "%Y%m%d").date() - datetime.timedelta(
+            days=prediction_len)
         hist_date_end = hist_date_start + datetime.timedelta(days=context_len + prediction_len)
 
-        # print(f'forecast date {pred_date_start} - {pred_date_end}')
-        # print(f'historical date {hist_date_start} - {hist_date_end}')
+        print(f'forecast date {pred_date_start} - {pred_date_end}')
+        print(f'historical date {hist_date_start} - {hist_date_end}')
 
         history_weather_path = "../data/weather/history"
         electricity_path = "../data/electricity"
@@ -150,7 +153,17 @@ class prediction_api:
         return prediction
 
 
-if __name__ == "__main__":
+def unit_test():
     predictor = prediction_api()
     model_path = "./my_model/hidden=28-rnn_layer=2-context_day=30-min_lr=0.0001.ckpt"
-    predictor.lastest_prediction(model_path, 30)
+    pred_date_start = datetime.datetime.strptime("20210315", "%Y%m%d")
+    num_day_context = 30
+    weather_start_date = pred_date_start - datetime.timedelta(days=num_day_context + 1)
+    weather_start_date = weather_start_date.strftime("%Y%m%d")
+    pred_date_start = pred_date_start.strftime("%Y%m%d")
+    predictor.custom_prediction(model_path, pred_date_start, weather_start_date, num_day_context)
+    predictor.lastest_prediction(model_path, num_day_context)
+
+
+if __name__ == "__main__":
+    unit_test()

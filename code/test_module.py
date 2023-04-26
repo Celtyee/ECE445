@@ -78,7 +78,7 @@ def test(model_name, task_name, prediction_len):
             prediction_result = prediction.custom_prediction(model_path, pred_day, weather_start_date, context_len)
             # set the logger name as "metrics"
             start_date = datetime.datetime.strptime(pred_day, "%Y%m%d")
-            end_date = start_date + datetime.timedelta(days=7)
+            end_date = start_date + datetime.timedelta(days=prediction_len - 1)
             building_path = f"../data/electricity/{building}.csv"
             df_electricity = pd.read_csv(building_path)
             df_electricity['time'] = pd.to_datetime(df_electricity['time']) + datetime.timedelta(hours=8)
@@ -92,14 +92,10 @@ def test(model_name, task_name, prediction_len):
             # fill the nan with the previous value
             df_electricity = df_electricity.fillna(method="ffill")
             usage_y = df_electricity[mask_ele]['val'][1:]
-            usage_y = np.array(usage_y)[:24 * 7]
+            usage_y = np.array(usage_y)[:24 * prediction_len]
             usage_pred = np.array(prediction_result[building])
             test_y = np.append(test_y, usage_y)
             test_pred = np.append(test_pred, usage_pred)
-            # rmse_per_day = np.sqrt(mean_squared_error(usage_y, usage_pred))
-            # mape_per_day = np.mean(np.abs((usage_y - usage_pred) / usage_y)) * 100
-            # mae_per_day = mean_absolute_error(usage_y, usage_pred)
-            # each_pred_metrics_mat[idx, i, :] = [rmse_per_day, mape_per_day, mae_per_day]
 
         test_y = test_y.flatten()
         test_pred = test_pred.flatten()
@@ -109,27 +105,27 @@ def test(model_name, task_name, prediction_len):
         mae = mean_absolute_error(test_y, test_pred)
         metrics_mat[idx, :] = [rmse, mape, mae]
 
-    # draw the graph of the RMSE, MAPE, MAE for 10 buildings
-    metrics_list = ["RMSE", "MAPE", "MAE"]
-    test_folder_path = f"../data/test/{task_name}/{model_name}"
-    if not os.path.exists(test_folder_path):
-        os.makedirs(test_folder_path)
+        # draw the graph of the RMSE, MAPE, MAE for 10 buildings
+        metrics_list = ["RMSE", "MAPE", "MAE"]
+        test_folder_path = f"../data/test/{task_name}/{model_name}"
+        if not os.path.exists(test_folder_path):
+            os.makedirs(test_folder_path)
 
-    # draw the graph for each metrics on 10 buildings
-    for m in range(len(metrics_list)):
-        plt.figure()
-        plt.plot(buildings, metrics_mat[:, m], label=metrics_list[m])
-        # show the data point on the graph
-        for i in range(len(buildings)):
-            plt.scatter(i, metrics_mat[i, m], c="black")
-            plt.annotate(metrics_mat[i, m], (i, metrics_mat[i, m]))
-        # set the title, xlabel, ylabel, legend, grid
-        plt.title(f"{metrics_list[m]}")
-        plt.xlabel("Prediction Day")
-        plt.ylabel("Value")
-        plt.legend()
-        plt.grid()
-        plt.savefig(f"{test_folder_path}/{metrics_list[m]}.png")
+        # draw the graph for each metrics on 10 buildings
+        for m in range(len(metrics_list)):
+            plt.figure()
+            plt.plot(buildings, metrics_mat[:, m], label=metrics_list[m])
+            # show the data point on the graph
+            for i in range(len(buildings)):
+                plt.scatter(i, metrics_mat[i, m], c="black")
+                plt.annotate(metrics_mat[i, m], (i, metrics_mat[i, m]))
+            # set the title, xlabel, ylabel, legend, grid
+            plt.title(f"{metrics_list[m]}")
+            plt.xlabel("Prediction Day")
+            plt.ylabel("Value")
+            plt.legend()
+            plt.grid()
+            plt.savefig(f"{test_folder_path}/{metrics_list[m]}.png")
 
 
 if __name__ == "__main__":

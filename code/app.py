@@ -22,7 +22,6 @@ def hello_world():  # put application's code here
     return 'Hello World!'
 
 
-
 @app.route('/1A/24hours', methods=['GET'])
 def get_1A_24hours():
     read_prediction_to_memory()
