@@ -7,7 +7,7 @@ from wunderground_crawler.utils import forecast_api
 
 
 class prediction_api:
-    def lastest_prediction(self, model_path, context_len):
+    def lastest_prediction(self, model_path, context_len) -> dict:
         '''
         forecast the electricity load from [pred_day, pred_day+num_day_pred). Save the prediction in ./prediction.json.
         The function will crawl data from google forecast website.

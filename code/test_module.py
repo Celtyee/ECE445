@@ -10,7 +10,7 @@ import logging
 import matplotlib.pyplot as plt
 
 
-def test(model_name, task_name):
+def test(model_name, task_name, prediction_len):
     '''
     Test the performance of model on the test data set from 20210315 - 20210430
     Parameters
@@ -55,8 +55,7 @@ def test(model_name, task_name):
             context_len = int(item.split("=")[1])
             break
 
-    predction_len = 7
-    num_day_context = context_len + predction_len
+    num_day_context = context_len + prediction_len
 
     logger = logging.getLogger(f"Metrics for the model {model_name}:\n")
     logger.info(context_len)
@@ -112,13 +111,19 @@ def test(model_name, task_name):
 
     # draw the graph of the RMSE, MAPE, MAE for 10 buildings
     metrics_list = ["RMSE", "MAPE", "MAE"]
-    test_folder_path = f"../data/test/{model_name}"
+    test_folder_path = f"../data/test/{task_name}/{model_name}"
     if not os.path.exists(test_folder_path):
         os.makedirs(test_folder_path)
+
     # draw the graph for each metrics on 10 buildings
     for m in range(len(metrics_list)):
         plt.figure()
         plt.plot(buildings, metrics_mat[:, m], label=metrics_list[m])
+        # show the data point on the graph
+        for i in range(len(buildings)):
+            plt.scatter(i, metrics_mat[i, m], c="black")
+            plt.annotate(metrics_mat[i, m], (i, metrics_mat[i, m]))
+        # set the title, xlabel, ylabel, legend, grid
         plt.title(f"{metrics_list[m]}")
         plt.xlabel("Prediction Day")
         plt.ylabel("Value")
@@ -130,4 +135,8 @@ def test(model_name, task_name):
 if __name__ == "__main__":
     model_name = sys.argv[1]
     task_name = sys.argv[2]
-    test(model_name, task_name)
+    prediction_len = sys.argv[3]
+    task_save_path = f"../data/test/{task_name}"
+    if not os.path.exists(task_save_path):
+        os.makedirs(task_save_path)
+    test(model_name, task_name, int(prediction_len))
