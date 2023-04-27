@@ -1,19 +1,19 @@
 #!/bin/bash
-
+python ./generate_train_dataset_buildings.py
 hidden_set=()
-for i in $(seq 30 2 50); do
+for i in $(seq 30 1 42); do
     # shellcheck disable=SC2206
     hidden_set+=($i)
 done
 
 rnn_set=()
-for i in $(seq 2 4);do
+for i in $(seq 2 3);do
   # shellcheck disable=SC2206
   rnn_set+=($i)
 done
 
 context_set=()
-for i in $(seq 21 28);do
+for i in $(seq 21 7 28);do
   context_set+=($((i)))
 done
 

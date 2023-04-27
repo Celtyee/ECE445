@@ -1,29 +1,15 @@
-import sys
-import csv
-import requests
 import datetime
 import os
 import pandas as pd
-from tqdm import tqdm
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+import requests
+import sys
 
-
-def generate_url(date):
-    # 创建查询url
-    # 分析查询网页的url，每次需要改变两个位置，个人天气站点是ISHANG46
-    # https://www.wunderground.com/history/daily/ZSHC/date/2023-3-2
-    str_date = date.strftime('%Y-%m-%d')
-    # date_obj = datetime.datetime.strptime(str_date, "%Y-%m-%d")
-    # print(date_obj)
-    # formatted_date = date_obj.strftime("%Y-%-m-%-d")
-    weather_station = 'ZSHC'
-    url = "https://www.wunderground.com/history/daily/{0}/{1}/{2}".format(weather_station, 'date', str_date)
-    # print()
-    return url
+import csv
 
 
 class wunderground_crawler:
@@ -59,6 +45,19 @@ class wunderground_crawler:
         weather = table[0]
         weather = weather.dropna(axis=0, how='all')
         return weather
+
+    def __generate_url(self, date):
+        # 创建查询url
+        # 分析查询网页的url，每次需要改变两个位置，个人天气站点是ISHANG46
+        # https://www.wunderground.com/history/daily/ZSHC/date/2023-3-2
+        str_date = date.strftime('%Y-%m-%d')
+        # date_obj = datetime.datetime.strptime(str_date, "%Y-%m-%d")
+        # print(date_obj)
+        # formatted_date = date_obj.strftime("%Y-%-m-%-d")
+        weather_station = 'ZSHC'
+        url = "https://www.wunderground.com/history/daily/{0}/{1}/{2}".format(weather_station, 'date', str_date)
+        # print()
+        return url
 
     def get_oneday_weather(self, url):
         # 根据url查询历史天气
@@ -99,7 +98,7 @@ class wunderground_crawler:
         for j in range(len(query_list)):
             i = query_list[j]
             date = i.strftime('%Y-%m-%d')
-            url = generate_url(i)
+            url = self.__generate_url(i)
             res, df_get = self.get_oneday_weather(url)
             if res:
                 # df_get=df_get[~(df_get['Time'].isnull())] # 删除Time列为空NaN的行
@@ -118,6 +117,7 @@ class visualcrossing_crawler:
         crawl the forecast data from visualcrossing
         Parameters
         ----------
+        csv_save_path:
         start_date: start_date of forecasting, datetime.datetime.date.
         end_date: end_date of forecasting, datetime.datetime.date.
 
@@ -151,6 +151,59 @@ class visualcrossing_crawler:
         df.to_csv(csv_save_path, index=False)
         return csv_save_path
 
-    # TODO: use the visualcrossing api to crawl the history data.
-    def crawl_history(self, start_date, end_date, csv_save_path):
-        pass
+    def fetch_history(self, start_date, end_date, csv_save_path):
+        '''
+
+        Parameters
+        ----------
+        start_date: start date of crawling, datetime.datetime.time.
+        end_date: end date of crawling, datetime.datetime.time.
+        csv_save_path: path to save the csv file, str.
+
+        Returns
+        -------
+        The history dataframe, pandas dataframe.
+        '''
+        # turn into the form of 'yyyy-mm-dd'
+        start_date = start_date.strftime('%Y-%m-%d')
+        end_date = end_date.strftime('%Y-%m-%d')
+        response = requests.request("GET",
+                                    f"https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/30.50938%2C%20120.68102/{start_date}/{end_date}?unitGroup=us&include=hours&key=WPBAQQSNZTMMARJ2TFEKBGYFL&contentType=csv")
+        if response.status_code != 200:
+            print('Unexpected Status code: ', response.status_code)
+            sys.exit()
+
+            # Parse the results as CSV
+        CSVText = csv.reader(response.text.splitlines(), delimiter=',', quotechar='"')
+        # turn it into pandas dataframe
+        df = pd.DataFrame(CSVText)
+        # set column as the first row
+        df.columns = df.iloc[0]
+        df = df.drop(0)
+        # turn the datetime into timestamp type
+        df['datetime'] = pd.to_datetime(df['datetime'])
+        df = df.rename(columns={'datetime': 'timestamp',
+                                'temp': 'Temperature',
+                                'Dew Point': 'Dew Point',
+                                'humidity': 'Humidity',
+                                'conditions': 'Condition'})
+
+        df.to_csv(csv_save_path, index=False)
+        return csv_save_path
+
+
+def unit_test_vc():
+    # test the visualcrossing_crawler
+    vc = visualcrossing_crawler()
+    start_date = datetime.datetime.strptime('20210726', '%Y%m%d')
+    end_date = datetime.datetime.strptime('20210726', '%Y%m%d')
+    vc.fetch_history(start_date, end_date, 'test_history.csv')
+
+
+def unit_test_wc():
+    # test the wunderground_crawler
+    pass
+
+
+if __name__ == "__main__":
+    unit_test_vc()
