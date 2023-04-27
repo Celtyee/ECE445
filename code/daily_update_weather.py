@@ -37,7 +37,7 @@ def main():
     # generator = dataset_generator(history_weather_path, electricity_path)
     # generator.compress_weather_data(f'{history_weather_path}/pre-processed_weather.csv')
     vc = visualcrossing_crawler()
-    start_date = datetime.datetime.strptime('2020-01-01', '%Y-%m-%d').date()
+    start_date = datetime.datetime.strptime('2021-01-01', '%Y-%m-%d').date()
     # end date is today
     end_date = datetime.datetime.today().date()
     weather_path = "../data/weather/pre-processed_weather.csv"
