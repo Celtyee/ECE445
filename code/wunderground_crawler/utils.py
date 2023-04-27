@@ -165,6 +165,7 @@ class visualcrossing_crawler:
         The history dataframe, pandas dataframe.
         '''
         # turn into the form of 'yyyy-mm-dd'
+        print("fetch from {} to {}".format(start_date, end_date))
         start_date = start_date.strftime('%Y-%m-%d')
         end_date = end_date.strftime('%Y-%m-%d')
         response = requests.request("GET",
