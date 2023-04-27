@@ -196,9 +196,13 @@ class visualcrossing_crawler:
 def unit_test_vc():
     # test the visualcrossing_crawler
     vc = visualcrossing_crawler()
-    start_date = datetime.datetime.strptime('20210726', '%Y%m%d')
+    start_date = datetime.datetime.strptime('20210101', '%Y%m%d')
     end_date = datetime.datetime.strptime('20210726', '%Y%m%d')
     vc.fetch_history(start_date, end_date, 'test_history.csv')
+
+    # enda date is today
+    end_date = datetime.datetime.today() - datetime.timedelta(days=1)
+    vc.crawl_forecast(start_date, end_date, 'test_forecast.csv')
 
 
 def unit_test_wc():
