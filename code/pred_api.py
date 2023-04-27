@@ -4,6 +4,7 @@ import os
 import json
 from utils import dataset_generator, my_deepAR_model
 from wunderground_crawler.utils import visualcrossing_crawler
+import numpy as np
 
 
 class prediction_api:
@@ -88,7 +89,7 @@ class prediction_api:
         print("Prediction finishes")
         return prediction
 
-    def custom_prediction(self, model_path, pred_date, weather_date, context_len, prediction_len=7) -> dict:
+    def custom_prediction(self, model_path, pred_date, weather_date, context_len, prediction_len=7) -> (dict, dict):
         '''
         allow users to use custom weather as the input data for the prediction of the start day.
         The prediction result is stored in the file history_prediction.json.
@@ -142,12 +143,35 @@ class prediction_api:
         model = my_deepAR_model(model_path, 24 * context_len, 24 * prediction_len, buildings)
         prediction = model.predict(pred_data_path)
 
+        # print("Prediction finishes")
+        # fetch the original data
+        original_usage = {}
+        for idx in range(len(buildings)):
+            building = buildings[idx]
+            building_path = f"../data/electricity/{building}.csv"
+            df_electricity = pd.read_csv(building_path)
+            df_electricity['time'] = pd.to_datetime(df_electricity['time']) - datetime.timedelta(hours=1)
+            df_electricity['time'] = pd.to_datetime(df_electricity['time']) + datetime.timedelta(hours=8)
+
+            mask_ele = (df_electricity['time'].dt.date >= pred_date_start) & (
+                    df_electricity['time'].dt.date <= pred_date_end)
+            df_electricity = df_electricity.loc[mask_ele]
+            # set the value <= 0 as the previous value
+            val_mask = df_electricity['val'] <= 0
+            df_electricity.loc[val_mask, 'val'] = np.nan
+            # fill the nan with the previous value
+            df_electricity = df_electricity.fillna(method="ffill")
+            original_usage[building] = df_electricity['val'].values.tolist()
+
+        origin_path = f"{self.output_path}/origin-pred_date={pred_date}-weather_date={weather_date}.json"
+        with open(origin_path, "w") as f:
+            json.dump(original_usage, f)
+
         prediction_path = f"{self.output_path}/prediction-pred_date={pred_date}-weather_date={weather_date}.json"
         with open(prediction_path, "w") as f:
             json.dump(prediction, f)
 
-        # print("Prediction finishes")
-        return prediction
+        return prediction, original_usage
 
 
 def unit_test():
@@ -159,7 +183,7 @@ def unit_test():
     weather_start_date = weather_start_date.strftime("%Y%m%d")
     pred_date_start = pred_date_start.strftime("%Y%m%d")
     predictor.custom_prediction(model_path, pred_date_start, weather_start_date, num_day_context)
-    predictor.lastest_prediction(model_path, num_day_context)
+    # predictor.lastest_prediction(model_path, num_day_context)
 
 
 if __name__ == "__main__":

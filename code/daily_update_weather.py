@@ -36,11 +36,14 @@ def main():
     # daily_update_weather(google_driver_path, history_weather_path)
     # generator = dataset_generator(history_weather_path, electricity_path)
     # generator.compress_weather_data(f'{history_weather_path}/pre-processed_weather.csv')
+
     vc = visualcrossing_crawler()
     start_date = datetime.datetime.strptime('2021-01-01', '%Y-%m-%d').date()
     # end date is today
-    end_date = datetime.datetime.today().date()
+    end_date = (datetime.datetime.today() - datetime.timedelta(days=1)).date()
     weather_path = "../data/weather/pre-processed_weather.csv"
+    # FIXME: fetch from 2021-01-01 to 2023-04-26
+    # Unexpected Status code:  401
     while True:
         vc.fetch_history(start_date, end_date, weather_path)
         # sleep the operating system for one day
