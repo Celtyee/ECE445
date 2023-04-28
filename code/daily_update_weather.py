@@ -27,7 +27,7 @@ import time
 #             print(f'get the weather on day {i}')
 
 
-def main():
+def fetch_history_weather():
     # google_driver_path = "./wunderground_crawler/chromedriver_win32/chromedriver-112.exe"
     # history_weather_path = "../data/weather/history"
     # electricity_path = "../data/electricity"
@@ -35,21 +35,34 @@ def main():
     #     os.mkdir(history_weather_path)
     # daily_update_weather(google_driver_path, history_weather_path)
     # generator = dataset_generator(history_weather_path, electricity_path)
-    # generator.compress_weather_data(f'{history_weather_path}/pre-processed_weather.csv')
+    # generator.compress_weather_data(f'{history_weather_path}/history_weather_wc.csv')
 
     vc = visualcrossing_crawler()
-    start_date = datetime.datetime.strptime('2021-01-01', '%Y-%m-%d').date()
     # end date is today
-    end_date = (datetime.datetime.today() - datetime.timedelta(days=1)).date()
-    weather_path = "../data/weather/pre-processed_weather.csv"
-    # FIXME: fetch from 2021-01-01 to 2023-04-26
-    # Unexpected Status code:  401
-    while True:
-        vc.fetch_history(start_date, end_date, weather_path)
-        # sleep the operating system for one day
-        print("finished! sleep for one day.")
-        time.sleep(86400)
+    # create a list from 2021-01-01 to 2023-05-01 month by month
+    start_date = datetime.datetime.strptime('2022-04-30', '%Y-%m-%d').date()
+    end_date = datetime.datetime.strptime('2023-04-01', '%Y-%m-%d').date()
+    date_list = [d for d in pd.date_range(start_date, end_date, freq='M')]
+    monthly_path = "../data/weather/monthly"
+    if not os.path.exists(monthly_path):
+        os.mkdir(monthly_path)
+    for i in range(len(date_list) - 1):
+        start_date = date_list[i].date()
+        end_date = (date_list[i + 1] - datetime.timedelta(days=1)).date()
+        save_path = f'{monthly_path}/{start_date}_{end_date}.csv'
+        vc.fetch_history(start_date, end_date, save_path)
 
 
 if __name__ == "__main__":
-    main()
+    # fetch_history_weather()
+    # compress the data in monthly folder
+    weather_monthly_path = "../data/weather/monthly"
+    total_weather_df = pd.DataFrame()
+    # for all files in weather_monthly_path
+    for root, dirs, files in os.walk(weather_monthly_path):
+        for file in files:
+            file_path = os.path.join(root, file)
+            df = pd.read_csv(file_path)
+            total_weather_df = pd.concat([total_weather_df, df], axis=0)
+    history_weather_path = "../data/weather/history"
+    total_weather_df.to_csv(f'{history_weather_path}/history_weather_vc.csv', index=False)

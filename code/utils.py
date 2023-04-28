@@ -130,6 +130,7 @@ class dataset_generator:
             # the 'val' is the electricity consumption between 'time_index' and 'time_index' + 1hour
             # add whether this hour is holiday or weekend
             # print(training_df.columns)
+            # "is_weekend" is true if the day is weekend and the day is in summer holiday or winter holiday
             training_df['is_weekend'] = training_df['timestamp'].dt.dayofweek.isin([5, 6])
             df_list.append(training_df)
 
