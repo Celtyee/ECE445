@@ -73,6 +73,7 @@ def main():
     parser.add_argument('--context_day', type=int, help="number of encoder")
     parser.add_argument('--prediction_len', type=int, help="number of prediction")
     parser.add_argument('--task_name', type=str, help="the name of task")
+    parser.add_argument('--train_dataset', type=str, help="the path of training dataset")
 
     args = parser.parse_args()
     hidden = args.hidden_size
@@ -96,7 +97,7 @@ def main():
     if not os.path.exists(f"../data/train/{args.task_name}"):
         os.mkdir(f"../data/train/{args.task_name}")
 
-    train_dataset_path = "../data/train/train_buildings.csv"
+    train_dataset_path = args.train_dataset
     data = pd.read_csv(train_dataset_path)
     data = data.fillna(method="ffill")
     data = data.astype(dict(Building=str))
