@@ -70,30 +70,32 @@ def test(model_name, task_name, prediction_len):
         # print(pred_date)
         pred_day = pred_date.strftime("%Y%m%d")
 
-        weather_start_date = pred_date - datetime.timedelta(days=num_day_context + 1)
-        weather_start_date = weather_start_date.strftime("%Y%m%d")
-        prediction_result = prediction.custom_prediction(model_path, pred_day, weather_start_date, context_len,
-                                                         prediction_len)
+        weather_end_date = pred_date - datetime.timedelta(days=1)
+        weather_end_date = weather_end_date.strftime("%Y%m%d")
+        prediction_result, original_buildings = prediction.custom_prediction(model_path, pred_day, weather_end_date,
+                                                                             context_len,
+                                                                             prediction_len)
         # set the logger name as "metrics"
-        start_date = datetime.datetime.strptime(pred_day, "%Y%m%d")
-        end_date = start_date + datetime.timedelta(days=prediction_len - 1)
+        # start_date = datetime.datetime.strptime(pred_day, "%Y%m%d")
+        # end_date = start_date + datetime.timedelta(days=prediction_len - 1)
         for idx in range(len(buildings)):
             building = buildings[idx]
-            building_path = f"../data/electricity/{building}.csv"
-            df_electricity = pd.read_csv(building_path)
-            df_electricity['time'] = pd.to_datetime(df_electricity['time']) - datetime.timedelta(hours=1)
-            df_electricity['time'] = pd.to_datetime(df_electricity['time']) + datetime.timedelta(hours=8)
-
-            mask_ele = (df_electricity['time'].dt.date >= start_date.date()) & (
-                    df_electricity['time'].dt.date <= end_date.date())
-            df_electricity = df_electricity.loc[mask_ele]
-            # set the value <= 0 as the previous value
-            val_mask = df_electricity['val'] <= 0
-            df_electricity.loc[val_mask, 'val'] = np.nan
-            # fill the nan with the previous value
-            df_electricity = df_electricity.fillna(method="ffill")
-            usage_y = df_electricity[mask_ele]['val'][:]
-            usage_y = np.array(usage_y)[:24 * prediction_len]
+            # building_path = f"../data/electricity/{building}.csv"
+            # df_electricity = pd.read_csv(building_path)
+            # df_electricity['time'] = pd.to_datetime(df_electricity['time']) - datetime.timedelta(hours=1)
+            # df_electricity['time'] = pd.to_datetime(df_electricity['time']) + datetime.timedelta(hours=8)
+            #
+            # mask_ele = (df_electricity['time'].dt.date >= start_date.date()) & (
+            #         df_electricity['time'].dt.date <= end_date.date())
+            # df_electricity = df_electricity.loc[mask_ele]
+            # # set the value <= 0 as the previous value
+            # val_mask = df_electricity['val'] <= 0
+            # df_electricity.loc[val_mask, 'val'] = np.nan
+            # # fill the nan with the previous value
+            # df_electricity = df_electricity.fillna(method="ffill")
+            # usage_y = df_electricity[mask_ele]['val'][:]
+            # usage_y = np.array(usage_y)[:24 * prediction_len]
+            usage_y = np.array(original_buildings[building])
             usage_pred = np.array(prediction_result[building])
             test_y[idx, i, :] = usage_y
             test_pred[idx, i, :] = usage_pred

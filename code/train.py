@@ -91,7 +91,7 @@ def main():
     logger.info(f"Pytorch-forecasting={pf.__version__}")
     logger.info(f"Pytorch-lightning={pl.__version__}")
     logger.critical(f"Training starts at {datetime.datetime.now()}")
-    min_lr_list = [10 ** y for y in range(-4, -3)]
+    min_lr_list = [10 ** y for y in range(-4, -2)]
 
     if not os.path.exists(f"../data/train/{args.task_name}"):
         os.mkdir(f"../data/train/{args.task_name}")
