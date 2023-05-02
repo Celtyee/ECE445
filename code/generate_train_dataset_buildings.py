@@ -17,8 +17,8 @@ def main():
     generator = dataset_generator(weather_path, electricity_path)
     # generate the dataset from 20221015 to 20230308
     buildings = ["00010010856311", "00010010856312"]
-    start_date = datetime.datetime.strptime("20210131", "%Y%m%d").date()
-    end_date = datetime.datetime.strptime("20220429", "%Y%m%d").date()
+    start_date = datetime.datetime.strptime("20210201", "%Y%m%d").date()
+    end_date = datetime.datetime.strptime("20220901", "%Y%m%d").date()
     train_df_list = generator.generate_dataset(buildings, start_date, end_date, whole_weather_path, start_idx=1,
                                                weather_stride=1)
     train_df = pd.concat(train_df_list)

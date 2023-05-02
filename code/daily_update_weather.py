@@ -40,7 +40,7 @@ def fetch_history_weather():
     vc = visualcrossing_crawler()
     # end date is today
     # create a list from 2021-01-01 to 2023-05-01 month by month
-    start_date = datetime.datetime.strptime('2022-04-30', '%Y-%m-%d').date()
+    start_date = datetime.datetime.strptime('2023-02-28', '%Y-%m-%d').date()
     end_date = datetime.datetime.strptime('2023-04-01', '%Y-%m-%d').date()
     date_list = [d for d in pd.date_range(start_date, end_date, freq='M')]
     monthly_path = "../data/weather/monthly"
@@ -54,7 +54,7 @@ def fetch_history_weather():
 
 
 if __name__ == "__main__":
-    # fetch_history_weather()
+    fetch_history_weather()
     # compress the data in monthly folder
     weather_monthly_path = "../data/weather/monthly"
     total_weather_df = pd.DataFrame()
