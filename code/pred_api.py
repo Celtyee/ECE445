@@ -47,8 +47,9 @@ class prediction_api:
         electricity_path = "../data/electricity"
         future_weather_path = "../data/weather/future"
         forecast_crawler = visualcrossing_crawler()
-        pred_weather_csv = f'{future_weather_path}/future_weather.csv'
-        forecast_crawler.crawl_forecast(pred_date_start, pred_date_end, pred_weather_csv)
+        pred_weather_csv = f'{future_weather_path}/future_weather_{pred_date_start}_{pred_date_end}.csv'
+        if not os.path.exists(pred_weather_csv):
+            forecast_crawler.crawl_forecast(pred_date_start, pred_date_end, pred_weather_csv)
         future_generator = dataset_generator(future_weather_path, electricity_path)
 
         # # compress the future data. The data will be saved in future_weather_path/future_weather.csv
@@ -59,7 +60,7 @@ class prediction_api:
         # get historical whether data and electricity data
         history_weather_path = "../data/weather/history"
 
-        hist_weather_csv = f'{history_weather_path}/pre-processed_weather.csv'
+        hist_weather_csv = f'{history_weather_path}/history_weather_vc.csv'
         historical_generator = dataset_generator(history_weather_path, electricity_path)
 
         hist_df_list = historical_generator.generate_dataset(buildings, hist_date_start, hist_date_end,
@@ -118,7 +119,7 @@ class prediction_api:
 
         history_weather_path = "../data/weather/history"
         electricity_path = "../data/electricity"
-        hist_weather_csv = f'{history_weather_path}/pre-processed_weather.csv'
+        hist_weather_csv = f'{history_weather_path}/history_weather_vc.csv'
         historical_generator = dataset_generator(history_weather_path, electricity_path)
 
         hist_df_list = historical_generator.generate_dataset(buildings, hist_date_start, hist_date_end,

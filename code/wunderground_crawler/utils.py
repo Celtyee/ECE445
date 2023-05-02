@@ -7,9 +7,10 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 import requests
+import urllib.request
 import sys
-
 import csv
+import codecs
 
 
 class wunderground_crawler:
@@ -128,14 +129,21 @@ class visualcrossing_crawler:
         # turn into the form of 'yyyy-mm-dd'
         start_date = start_date.strftime('%Y-%m-%d')
         end_date = end_date.strftime('%Y-%m-%d')
-        url = f"https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/30.50938%2C%20120.68102/{start_date}/{end_date}?unitGroup=us&include=hours&key=WPBAQQSNZTMMARJ2TFEKBGYFL&contentType=csv"
-        response = requests.request("GET", url)
-        if response.status_code != 200:
-            print('Unexpected Status code: ', response.status_code)
-            # raise a exception
+        try:
+            ResultBytes = urllib.request.urlopen(
+                f"https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/30.35%2C%20120.32/{start_date}/{end_date}?unitGroup=us&include=hours&key=WPBAQQSNZTMMARJ2TFEKBGYFL&contentType=csv")
+
+            # Parse the results as CSV
+            CSVText = csv.reader(codecs.iterdecode(ResultBytes, 'utf-8'))
+
+        except urllib.error.HTTPError as e:
+            ErrorInfo = e.read().decode()
+            print('Error code: ', e.code, ErrorInfo)
             sys.exit()
-        # Parse the results as CSV
-        CSVText = csv.reader(response.text.splitlines(), delimiter=',', quotechar='"')
+        except  urllib.error.URLError as e:
+            ErrorInfo = e.read().decode()
+            print('Error code: ', e.code, ErrorInfo)
+            sys.exit()
         # turn it into pandas dataframe
         df = pd.DataFrame(CSVText)
         # set column as the first row
@@ -168,14 +176,32 @@ class visualcrossing_crawler:
         print("fetch from {} to {}".format(start_date, end_date))
         start_date = start_date.strftime('%Y-%m-%d')
         end_date = end_date.strftime('%Y-%m-%d')
-        response = requests.request("GET",
-                                    f"https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/30.50938%2C%20120.68102/{start_date}/{end_date}?unitGroup=us&include=hours&key=WPBAQQSNZTMMARJ2TFEKBGYFL&contentType=csv")
-        if response.status_code != 200:
-            print('Unexpected Status code: ', response.status_code)
-            sys.exit()
+
+        try:
+            # liyang.19@intl.zju.edu.cn
+            ResultBytes = urllib.request.urlopen(
+                f"https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/30.35%2C%20120.32/{start_date}/{end_date}?unitGroup=us&include=hours&key=HP5E7ZNHCRY47ANDBDJ7WEXDE&contentType=csv")
+
+            # Aoz.19@intl.zju.edu.cn
+            # ResultBytes = urllib.request.urlopen(
+            #     f"https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/30.35%2C%20120.32/{start_date}/{end_date}?unitGroup=us&include=hours&key=SZXNC5GBHQA5GZD9DAAD9NFE5&contentType=csv")
+
+            # chanleon1124@gmail.com
+            # ResultBytes = urllib.request.urlopen(
+            #     f"https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/30.35%2C%20120.32/{start_date}/{end_date}?unitGroup=us&include=hours&key=WPBAQQSNZTMMARJ2TFEKBGYFL&contentType=csv")
 
             # Parse the results as CSV
-        CSVText = csv.reader(response.text.splitlines(), delimiter=',', quotechar='"')
+            CSVText = csv.reader(codecs.iterdecode(ResultBytes, 'utf-8'))
+
+        except urllib.error.HTTPError as e:
+            ErrorInfo = e.read().decode()
+            print('Error code: ', e.code, ErrorInfo)
+            sys.exit()
+        except  urllib.error.URLError as e:
+            ErrorInfo = e.read().decode()
+            print('Error code: ', e.code, ErrorInfo)
+            sys.exit()
+
         # turn it into pandas dataframe
         df = pd.DataFrame(CSVText)
         # set column as the first row
@@ -196,7 +222,7 @@ class visualcrossing_crawler:
 def unit_test_vc():
     # test the visualcrossing_crawler
     vc = visualcrossing_crawler()
-    start_date = datetime.datetime.strptime('20210101', '%Y%m%d')
+    start_date = datetime.datetime.strptime('20210724', '%Y%m%d')
     end_date = datetime.datetime.strptime('20210726', '%Y%m%d')
     vc.fetch_history(start_date, end_date, 'test_history.csv')
 
