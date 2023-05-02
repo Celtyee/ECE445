@@ -40,8 +40,8 @@ def fetch_history_weather():
     vc = visualcrossing_crawler()
     # end date is today
     # create a list from 2021-01-01 to 2023-05-01 month by month
-    start_date = datetime.datetime.strptime('2023-02-28', '%Y-%m-%d').date()
-    end_date = datetime.datetime.strptime('2023-04-01', '%Y-%m-%d').date()
+    start_date = datetime.datetime.strptime('2020-10-31', '%Y-%m-%d').date()
+    end_date = datetime.datetime.strptime('2021-01-30', '%Y-%m-%d').date()
     date_list = [d for d in pd.date_range(start_date, end_date, freq='M')]
     monthly_path = "../data/weather/monthly"
     if not os.path.exists(monthly_path):
