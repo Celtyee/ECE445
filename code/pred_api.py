@@ -90,7 +90,7 @@ class prediction_api:
         print("Prediction finishes")
         return prediction
 
-    def custom_prediction(self, model_path, pred_date, hist_weather_end, context_len, prediction_len=7) -> (dict, dict):
+    def custom_prediction(self, model_path, pred_date, context_end, context_len, prediction_len=7) -> (dict, dict):
         '''
         allow users to use custom weather as the input data for the prediction of the start day.
         The prediction result is stored in the file history_prediction.json.
@@ -99,7 +99,7 @@ class prediction_api:
         -------
         model_path: the path of pytorch checkpoint file, str: %Y%m%d.
         pred_date: the start date of prediciton,  str. The pred_date should be one week ago from today.
-        hist_weather_end: the end date of custom input weather, str: %Y%m%d.
+        context_end: the end date of custom input weather, str: %Y%m%d.
 
         Returns
         -------
@@ -111,11 +111,11 @@ class prediction_api:
         pred_date_start = datetime.datetime.strptime(pred_date, "%Y%m%d").date()
         pred_date_end = pred_date_start + datetime.timedelta(days=prediction_len - 1)
 
-        hist_date_end = datetime.datetime.strptime(hist_weather_end, "%Y%m%d").date()
+        hist_date_end = datetime.datetime.strptime(context_end, "%Y%m%d").date()
         hist_date_start = (hist_date_end - datetime.timedelta(days=context_len + prediction_len - 1))
 
         print(f'forecast date {pred_date_start} - {pred_date_end}')
-        print(f'historical date {hist_date_start} - {hist_date_end}')
+        print(f'context date {hist_date_start} - {hist_date_end}')
 
         history_weather_path = "../data/weather/history"
         electricity_path = "../data/electricity"
@@ -163,11 +163,11 @@ class prediction_api:
             df_electricity = df_electricity.fillna(method="ffill")
             original_usage[building] = df_electricity['val'].values.tolist()
 
-        origin_path = f"{self.output_path}/origin-pred_date={pred_date}-weather_date={hist_date_start}.json"
+        origin_path = f"{self.output_path}/origin-pred_date={pred_date}.json"
         with open(origin_path, "w") as f:
             json.dump(original_usage, f)
 
-        prediction_path = f"{self.output_path}/prediction-pred_date={pred_date}-weather_date={hist_date_start}.json"
+        prediction_path = f"{self.output_path}/prediction-pred_date={pred_date}.json"
         with open(prediction_path, "w") as f:
             json.dump(prediction, f)
 
@@ -177,12 +177,12 @@ class prediction_api:
 def unit_test():
     predictor = prediction_api()
     model_path = "./my_model/hidden=28-rnn_layer=2-context_day=30-min_lr=0.0001.ckpt"
-    pred_date_start = datetime.datetime.strptime("20210315", "%Y%m%d")
+    pred_date_start = datetime.datetime.strptime("20220315", "%Y%m%d")
     num_day_context = 30
-    weather_start_date = pred_date_start - datetime.timedelta(days=num_day_context + 1)
-    weather_start_date = weather_start_date.strftime("%Y%m%d")
+    context_end_date = pred_date_start - datetime.timedelta(1)
+    context_end_date = context_end_date.strftime("%Y%m%d")
     pred_date_start = pred_date_start.strftime("%Y%m%d")
-    predictor.custom_prediction(model_path, pred_date_start, weather_start_date, num_day_context)
+    predictor.custom_prediction(model_path, pred_date_start, context_end_date, num_day_context)
     # predictor.lastest_prediction(model_path, num_day_context)
 
 
