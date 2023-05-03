@@ -43,7 +43,7 @@ def train(data, hidden_size, rnn_layer, context_day, prediction_len, min_lr, tas
     )
 
     validation = TimeSeriesDataSet.from_dataset(training, data, min_prediction_idx=cutoff + 1)
-    batch_size = 128
+    batch_size = 512
 
     # synchronize samples in each batch over time - only necessary for DeepVAR, not for DeepAR
     train_dataloader = training.to_dataloader(
@@ -82,8 +82,8 @@ def main():
 
     pl_seed = 42
     pl.seed_everything(pl_seed)
-    logger = logging.getLogger("train_logger")
-    logging.basicConfig(filename='train_logger.txt',
+    logger = logging.getLogger(f"train_{args.task_name}")
+    logging.basicConfig(filename=f'train_{args.task_name}.txt',
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s-%(funcName)s',
                         level=logging.INFO,
                         filemode='w')

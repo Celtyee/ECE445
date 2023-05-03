@@ -3,7 +3,6 @@ import sys
 
 from pred_api import prediction_api
 import datetime
-import pandas as pd
 import numpy as np
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 import logging
@@ -28,17 +27,16 @@ def test(model_name, task_name, prediction_len):
     # data prediction for building 1A.
     buildings = ['1A', '1B', '1C', '1D', '1E', '2A', '2B', '2C', '2D', '2E']
 
-    # 20210315 - 20210430
-    pred_date_start = datetime.datetime.strptime("20210315", "%Y%m%d")
+    # 20221101 - 20230301
+    pred_date_start = datetime.datetime.strptime("20221101", "%Y%m%d")
 
-    # pred_date_end = datetime.datetime.strptime("20210317", "%Y%m%d")
-    pred_date_end = datetime.datetime.strptime("20210430", "%Y%m%d")
+    # pred_date_end = datetime.datetime.strptime("20221102", "%Y%m%d")
+    pred_date_end = datetime.datetime.strptime("20230301", "%Y%m%d")
 
     # create a datetime list from pred_date_start to pred_date_end
     pred_date_list = [pred_date_start + datetime.timedelta(days=i) for i in
                       range((pred_date_end - pred_date_start).days + 1)]
 
-    metrics_data = np.zeros((len(buildings), 3))
     logging.basicConfig(filename=f"test.log",
                         level=logging.INFO)
     # Input string

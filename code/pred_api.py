@@ -186,5 +186,9 @@ def unit_test():
     # predictor.lastest_prediction(model_path, num_day_context)
 
 
+def rollback_unit_test():
+    pass
+
+
 if __name__ == "__main__":
-    unit_test()
+    rollback_unit_test()

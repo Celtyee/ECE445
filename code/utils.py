@@ -110,6 +110,8 @@ class dataset_generator:
         for building in name_list:
             electricity_path = f'{self.history_electricity_folder}/{building}.csv'
             df_ele = pd.read_csv(electricity_path)
+            # change the name of timestamp into time
+            df_ele.rename(columns={'timestamp': 'time'}, inplace=True)
             # Turn from UTC into UTC+8. -1 to align the val so that each values represent the electricity consumption in the next data.
             df_ele['time'] = pd.to_datetime(df_ele['time']) + datetime.timedelta(hours=8) - datetime.timedelta(hours=1)
 
@@ -117,8 +119,10 @@ class dataset_generator:
             # set the 'val' column of the dataframe to nan if it is less or equal to 0
             val_mask = df_ele['val'] <= 0
             df_ele.loc[val_mask, 'val'] = np.nan
-            # fill the nan with the previous value
-            df_ele = df_ele.fillna(method="ffill")
+            # fill the nan with the mean of previous 48 data points
+            for i in range(48, len(df_ele)):
+                if np.isnan(df_ele['val'].iloc[i]):
+                    df_ele['val'].iloc[i] = np.mean(df_ele['val'].iloc[i - 48:i])
 
             # print(f"the number of losing electricity data for building {building} is {np.sum(val_mask)}")
             electricity_sub = df_ele[mask_ele]['val']
@@ -302,5 +306,57 @@ class my_deepAR_model:
         pred_dict = {}
         for idx in range(len(self.building_series)):
             pred_dict[self.building_series[idx]] = predictions[idx].tolist()
+
+        return pred_dict
+
+    def rollback_predict(self, csv_data_path):
+        '''
+                Predict the future electricity usage with the prediction data.
+                Parameters
+                ----------
+                csv_data_path: The path of necessary data for prediction, including historical weather and electricity usage data
+                                as well as the future weather data, str.
+
+                Returns
+                -------
+
+                '''
+        data = pd.read_csv(csv_data_path)
+        data = data.fillna(method='pad')
+        cutoff = data["time_idx"].max() - self.predictor_length
+
+        num_days = self.predictor_length / 24
+
+        history = TimeSeriesDataSet(
+            data[lambda x: x.index <= cutoff],
+            time_idx="time_idx",
+            target="val",
+            categorical_encoders={"Building": NaNLabelEncoder().fit(data.Building),
+                                  "Condition": NaNLabelEncoder().fit(data.Condition)},
+            group_ids=["Building"],
+            static_categoricals=[
+                "Building"
+            ],
+
+            time_varying_known_reals=["Temperature", "Humidity", "is_weekend"],
+            time_varying_known_categoricals=["Condition"],
+            allow_missing_timesteps=True,
+            time_varying_unknown_reals=["val"],
+            max_encoder_length=self.context_length,
+            max_prediction_length=self.predictor_length
+        )
+        pred_dict = {}
+        batch_size = 128
+        for d in range(num_days):
+            pred_start = cutoff + 1 + d * 24
+            prediction_data = TimeSeriesDataSet.from_dataset(history, data, min_prediction_idx=pred_start)
+            pred_dataloader = prediction_data.to_dataloader(train=False, batch_size=batch_size, num_workers=0,
+                                                            batch_sampler='synchronized')
+
+            predictions = self.model.predict(pred_dataloader)
+            for idx in range(len(self.building_series)):
+                data[pred_start:pred_start + 24]["val"] = predictions[idx].tolist()
+                pred_dict[self.building_series[idx]] = pred_dict.get(self.building_series[idx], []) + predictions[
+                    idx].tolist()
 
         return pred_dict

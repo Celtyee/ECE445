@@ -21,7 +21,7 @@ for hidden in "${hidden_set[@]}";do
   for rnn in "${rnn_set[@]}";do
     for context in "${context_set[@]}";do
       echo "Running with parameters: hidden=$hidden, rnn=$rnn, context=$context"
-      python train.py --hidden_size "$hidden" --rnn_layers "$rnn" --context_day "$context" --prediction_len 1 --task_name buildings_24hours
+      python train.py --hidden_size "$hidden" --rnn_layers "$rnn" --context_day "$context" --prediction_len 1 --task_name buildings_24hours --train_dataset ../data/train/train_buildings.csv
       done
   done
 done

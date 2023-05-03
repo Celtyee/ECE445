@@ -1,5 +1,5 @@
 #!/bin/bash
-python ./generate_train_dataset_buildings.py
+python ./generate_train_dataset_campus.py
 hidden_set=()
 for i in $(seq 30 2 42); do
     # shellcheck disable=SC2206
