@@ -188,5 +188,9 @@ def rollback_unit_test():
     pass
 
 
+def rollback_unit_test():
+    pass
+
+
 if __name__ == "__main__":
     rollback_unit_test()

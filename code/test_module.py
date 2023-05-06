@@ -27,11 +27,19 @@ def test(model_name, task_name, prediction_len):
     # data prediction for building 1A.
     buildings = ['1A', '1B', '1C', '1D', '1E', '2A', '2B', '2C', '2D', '2E']
 
+<<<<<<< HEAD
     # 20221101 - 20221201
     pred_date_start = datetime.datetime.strptime("2020901", "%Y%m%d")
 
     # pred_date_end = datetime.datetime.strptime("20221102", "%Y%m%d")
     pred_date_end = datetime.datetime.strptime("20201001", "%Y%m%d")
+=======
+    # 20221101 - 20230301
+    pred_date_start = datetime.datetime.strptime("20221101", "%Y%m%d")
+
+    # pred_date_end = datetime.datetime.strptime("20221102", "%Y%m%d")
+    pred_date_end = datetime.datetime.strptime("20230301", "%Y%m%d")
+>>>>>>> c23e8d165238cb87dd31a268997afe5a55c7ee06
 
     # create a datetime list from pred_date_start to pred_date_end
     pred_date_list = [pred_date_start + datetime.timedelta(days=i) for i in
