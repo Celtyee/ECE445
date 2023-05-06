@@ -90,7 +90,7 @@ class prediction_api:
         print("Prediction finishes")
         return prediction
 
-    def custom_prediction(self, model_path, pred_date, context_end, context_len, prediction_len=1,
+    def custom_prediction(self, model_path, pred_date, context_end, context_len, prediction_len=7,
                           buildings=None) -> (dict, dict):
         '''
         allow users to use custom weather as the input data for the prediction of the start day.
@@ -181,7 +181,7 @@ def unit_test():
     context_end_date = prediction_date_start - datetime.timedelta(days=1)
     context_end_date = context_end_date.strftime("%Y%m%d")
     prediction_date_start = prediction_date_start.strftime("%Y%m%d")
-    predictor.custom_prediction(model_path, prediction_date_start, context_end_date, context_len)
+    predictor.custom_prediction(model_path, prediction_date_start, context_end_date, context_len, prediction_len=1)
 
 
 if __name__ == "__main__":
