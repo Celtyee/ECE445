@@ -81,7 +81,7 @@ class prediction_api:
         # run prediction
         # print(f'read csv file from {pred_data_path}')
         model = my_deepAR_model(model_path, 24 * context_len, 24 * prediction_len, buildings)
-        prediction = model.predict(pred_data_path)
+        prediction = model.rollback_predict(pred_data_path)
 
         prediction_path = "./prediction.json"
         with open(prediction_path, "w") as f:
@@ -90,7 +90,7 @@ class prediction_api:
         print("Prediction finishes")
         return prediction
 
-    def custom_prediction(self, model_path, pred_date, context_end, context_len, prediction_len=7,
+    def custom_prediction(self, model_path, pred_date, context_end, context_len, prediction_len=1,
                           buildings=None) -> (dict, dict):
         '''
         allow users to use custom weather as the input data for the prediction of the start day.
@@ -143,7 +143,7 @@ class prediction_api:
         input_df.to_csv(input_data, index=False)
         # run prediction
         model = my_deepAR_model(model_path, 24 * context_len, 24 * prediction_len, buildings)
-        prediction = model.predict(input_data)
+        prediction = model.rollback_predict(input_data)
 
         # print("Prediction finishes")
         # fetch the original data
@@ -176,21 +176,13 @@ class prediction_api:
 def unit_test():
     predictor = prediction_api()
     model_path = "./my_model/hidden=38-rnn_layer=3-context_day=3-min_lr=0.001.ckpt"
-    pred_date_start = datetime.datetime.strptime("20220315", "%Y%m%d")
-    context_len = 30
-    context_end_date = pred_date_start - datetime.timedelta(1)
+    prediction_date_start = datetime.datetime.strptime("20221101", "%Y%m%d")
+    context_len = 3
+    context_end_date = prediction_date_start - datetime.timedelta(days=1)
     context_end_date = context_end_date.strftime("%Y%m%d")
-    pred_date_start = pred_date_start.strftime("%Y%m%d")
-    predictor.custom_prediction(model_path, pred_date_start, context_end_date, context_len)
-
-
-def rollback_unit_test():
-    pass
-
-
-def rollback_unit_test():
-    pass
+    prediction_date_start = prediction_date_start.strftime("%Y%m%d")
+    predictor.custom_prediction(model_path, prediction_date_start, context_end_date, context_len)
 
 
 if __name__ == "__main__":
-    rollback_unit_test()
+    unit_test()

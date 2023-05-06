@@ -269,23 +269,23 @@ class my_deepAR_model:
 
         return pred_dict
 
-    def rollback_predict(self, csv_data_path):
+    def rollback_predict(self, input_data_path):
         '''
-                Predict the future electricity usage with the prediction data.
-                Parameters
-                ----------
-                csv_data_path: The path of necessary data for prediction, including historical weather and electricity usage data
-                                as well as the future weather data, str.
+        Predict the future electricity usage with the prediction data.
+        Parameters
+        ----------
+        input_data_path: The path of necessary data for prediction, including historical weather and electricity usage data
+                        as well as the future weather data, str.
 
-                Returns
-                -------
+        Returns
+        -------
 
-                '''
-        data = pd.read_csv(csv_data_path)
+        '''
+        data = pd.read_csv(input_data_path)
         data = data.fillna(method='pad')
         cutoff = data["time_idx"].max() - self.predictor_length
 
-        num_days = self.predictor_length / 24
+        num_days = int(self.predictor_length / 24)
 
         history = TimeSeriesDataSet(
             data[lambda x: x.index <= cutoff],
@@ -303,12 +303,14 @@ class my_deepAR_model:
             allow_missing_timesteps=True,
             time_varying_unknown_reals=["val"],
             max_encoder_length=self.context_length,
-            max_prediction_length=self.predictor_length
+            max_prediction_length=24
         )
+        print(self.predictor_length)
         pred_dict = {}
         batch_size = 128
         for d in range(num_days):
-            pred_start = cutoff + 1 + d * 24
+            print(f"day: {d}")
+            pred_start = (cutoff + 1) + d * 24
             prediction_data = TimeSeriesDataSet.from_dataset(history, data, min_prediction_idx=pred_start)
             pred_dataloader = prediction_data.to_dataloader(train=False, batch_size=batch_size, num_workers=0,
                                                             batch_sampler='synchronized')
