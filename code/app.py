@@ -1,7 +1,16 @@
 import json
+import datetime
+import os
+import sys
 
 from flask import Flask
 from flask_cors import CORS, cross_origin
+
+from prediction_api import prediction_api
+
+
+
+
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -19,283 +28,76 @@ def read_prediction_to_memory():
 
 @app.route('/')
 def hello_world():  # put application's code here
+    # create a log file to record the print
     return 'Hello World!'
 
 
-@app.route('/1A/24hours', methods=['GET'])
-def get_1A_24hours():
+# a Get request with two parameters: the first is the name of the building, the second is time interval,
+# the time interval may be 24hours, 3days or 7days. The prediction is returned in the format of a json string.
+@app.route('/<building>/<time_interval>', methods=['GET'])
+def get_prediction(building, time_interval):
     read_prediction_to_memory()
-    # return data['1A']
-    prediction = data['1A']
-    # convert to a dict consists of index and value
-    prediction = {i: prediction[i] for i in range(24)}
+    prediction = data[building]
+    if time_interval == '24hours':
+        prediction = {i: prediction[i] for i in range(24)}
+    elif time_interval == '3days':
+        prediction = {i: prediction[i] for i in range(24 * 3)}
+    elif time_interval == '7days':
+        prediction = {i: prediction[i] for i in range(24 * 7)}
+    else:
+        return 'Invalid time interval'
 
     return json.dumps(prediction)
 
 
-@app.route('/1A/3days', methods=['GET'])
-def get_1A_3days():
-    read_prediction_to_memory()
-    # return data['1A']
-    prediction = data['1A']
-    # convert to a dict consists of index and value
-    prediction = {i: prediction[i] for i in range(24 * 3)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/1A/7days', methods=['GET'])
-def get_1A_7days():
-    read_prediction_to_memory()
-    # return data['1A']
-    prediction = data['1A']
-    # convert to a dict consists of index and value
-    prediction = {i: prediction[i] for i in range(24 * 7)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/1B/24hours', methods=['GET'])
-def get_1B_24hours():
-    read_prediction_to_memory()
-    prediction = data['1B']
-    prediction = {i: prediction[i] for i in range(24)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/1B/3days', methods=['GET'])
-def get_1B_3days():
-    read_prediction_to_memory()
-    prediction = data['1B']
-    prediction = {i: prediction[i] for i in range(24 * 3)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/1B/7days', methods=['GET'])
-def get_1B_7days():
-    read_prediction_to_memory()
-    prediction = data['1B']
-    prediction = {i: prediction[i] for i in range(24 * 7)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/1C/24hours', methods=['GET'])
-def get_1C_24hours():
-    read_prediction_to_memory()
-    prediction = data['1C']
-    prediction = {i: prediction[i] for i in range(24)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/1C/3days', methods=['GET'])
-def get_1C_3days():
-    read_prediction_to_memory()
-    prediction = data['1C']
-    prediction = {i: prediction[i] for i in range(24 * 3)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/1C/7days', methods=['GET'])
-def get_1C_7days():
-    read_prediction_to_memory()
-    prediction = data['1C']
-    prediction = {i: prediction[i] for i in range(24 * 7)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/1D/24hours', methods=['GET'])
-def get_1D_24hours():
-    read_prediction_to_memory()
-    prediction = data['1D']
-    prediction = {i: prediction[i] for i in range(24)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/1D/3days', methods=['GET'])
-def get_1D_3days():
-    read_prediction_to_memory()
-    prediction = data['1D']
-    prediction = {i: prediction[i] for i in range(24 * 3)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/1D/7days', methods=['GET'])
-def get_1D_7days():
-    read_prediction_to_memory()
-    prediction = data['1D']
-    prediction = {i: prediction[i] for i in range(24 * 7)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/1E/24hours', methods=['GET'])
-def get_1E_24hours():
-    read_prediction_to_memory()
-    prediction = data['1E']
-    prediction = {i: prediction[i] for i in range(24)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/1E/3days', methods=['GET'])
-def get_1E_3days():
-    read_prediction_to_memory()
-    prediction = data['1E']
-    prediction = {i: prediction[i] for i in range(24 * 3)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/1E/7days', methods=['GET'])
-def get_1E_7days():
-    read_prediction_to_memory()
-    prediction = data['1E']
-    prediction = {i: prediction[i] for i in range(24 * 7)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/2A/24hours', methods=['GET'])
-def get_2A_24hours():
-    read_prediction_to_memory()
-    prediction = data['2A']
-    prediction = {i: prediction[i] for i in range(24)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/2A/3days', methods=['GET'])
-def get_2A_3days():
-    read_prediction_to_memory()
-    prediction = data['2A']
-    prediction = {i: prediction[i] for i in range(24 * 3)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/2A/7days', methods=['GET'])
-def get_2A_7days():
-    read_prediction_to_memory()
-    prediction = data['2A']
-    prediction = {i: prediction[i] for i in range(24 * 7)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/2B/24hours', methods=['GET'])
-def get_2B_24hours():
-    read_prediction_to_memory()
-    prediction = data['2B']
-    prediction = {i: prediction[i] for i in range(24)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/2B/3days', methods=['GET'])
-def get_2B_3days():
-    read_prediction_to_memory()
-    prediction = data['2B']
-    prediction = {i: prediction[i] for i in range(24 * 3)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/2B/7days', methods=['GET'])
-def get_2B_7days():
-    read_prediction_to_memory()
-    prediction = data['2B']
-    prediction = {i: prediction[i] for i in range(24 * 7)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/2C/24hours', methods=['GET'])
-def get_2C_24hours():
-    read_prediction_to_memory()
-    prediction = data['2C']
-    prediction = {i: prediction[i] for i in range(24)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/2C/3days', methods=['GET'])
-def get_2C_3days():
-    read_prediction_to_memory()
-    prediction = data['2C']
-    prediction = {i: prediction[i] for i in range(24 * 3)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/2C/7days', methods=['GET'])
-def get_2C_7days():
-    read_prediction_to_memory()
-    prediction = data['2C']
-    prediction = {i: prediction[i] for i in range(24 * 7)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/2D/24hours', methods=['GET'])
-def get_2D_24hours():
-    read_prediction_to_memory()
-    prediction = data['2D']
-    prediction = {i: prediction[i] for i in range(24)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/2D/3days', methods=['GET'])
-def get_2D_3days():
-    read_prediction_to_memory()
-    prediction = data['2D']
-    prediction = {i: prediction[i] for i in range(24 * 3)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/2D/7days', methods=['GET'])
-def get_2D_7days():
-    read_prediction_to_memory()
-    prediction = data['2D']
-    prediction = {i: prediction[i] for i in range(24 * 7)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/2E/24hours', methods=['GET'])
-def get_2E_24hours():
-    read_prediction_to_memory()
-    prediction = data['2E']
-    prediction = {i: prediction[i] for i in range(24)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/2E/3days', methods=['GET'])
-def get_2E_3days():
-    read_prediction_to_memory()
-    prediction = data['2E']
-    prediction = {i: prediction[i] for i in range(24 * 3)}
-
-    return json.dumps(prediction)
-
-
-@app.route('/2E/7days', methods=['GET'])
-def get_2E_7days():
-    read_prediction_to_memory()
-    prediction = data['2E']
-    prediction = {i: prediction[i] for i in range(24 * 7)}
-
-    return json.dumps(prediction)
+# a Get request with two parameters: the first is the name of the building, the second is the start date of the
+# prediction, the start date is in the format: "%Y-%m-%d" (e.g. 2019-01-01). The prediction is returned in the format
+# of a json string.
+@app.route('/demo/<building>/<time_interval>/<start_date>', methods=['GET'])
+def get_prediction_demo(building, time_interval, start_date):
+    # reformat the start_date to the format: "%Y%m%d" (e.g. 20190101)
+    start_date = start_date.replace('-', '')
+
+    model_path = "./my_model/hidden=28-rnn_layer=2-context_day=30-min_lr=0.0001.ckpt"
+    pred_date_start = datetime.datetime.strptime(start_date, "%Y%m%d")
+    num_day_context = 30
+    weather_start_date = pred_date_start - datetime.timedelta(days=num_day_context + 1)
+
+    weather_start_date = weather_start_date.strftime("%Y%m%d")
+    pred_date_start = pred_date_start.strftime("%Y%m%d")
+    # check if files named "../data/output/origin-pred_date={pred_date_start}-weather_date={weather_start_date}.json"
+    # and "../data/output/prediction-pred_date={pred_date_start}-weather_date={weather_start_date}.json" both exist
+    # if not, run the prediction api
+    if not os.path.isfile(
+            "../data/output/origin-pred_date=" + pred_date_start + ".json") \
+            or not os.path.isfile(
+        "../data/output/prediction-pred_date=" + pred_date_start + ".json"):
+        predictor = prediction_api()
+        predictor.custom_prediction(model_path, pred_date_start, weather_start_date, num_day_context)
+
+    # read in a json file named "./data/output/prediction-pred_date={pred_date_start}-weather_date={weather_start_date}.json"
+    json_path = "../data/output/prediction-pred_date=" + pred_date_start + ".json"
+    with open(json_path, 'r') as f:
+        prediction = json.load(f)
+    # read in a json file named "./data/output/origin-pred_date={pred_date_start}-weather_date={weather_start_date}.json"
+    json_path = "../data/output/origin-pred_date=" + pred_date_start + ".json"
+    with open(json_path, 'r') as f:
+        origin = json.load(f)
+
+    # return the prediction and origin for the specified building and time interval in the format of a json string
+    if time_interval == '24hours':
+        prediction = {i: prediction[building][i] for i in range(24)}
+        origin = {i: origin[building][i] for i in range(24)}
+    elif time_interval == '3days':
+        prediction = {i: prediction[building][i] for i in range(24 * 3)}
+        origin = {i: origin[building][i] for i in range(24 * 3)}
+    elif time_interval == '7days':
+        prediction = {i: prediction[building][i] for i in range(24 * 7)}
+        origin = {i: origin[building][i] for i in range(24 * 7)}
+    else:
+        return 'Invalid time interval'
+
+    return json.dumps({'prediction': prediction, 'real': origin})
 
 
 if __name__ == '__main__':

@@ -30,25 +30,26 @@ class prediction_api:
         -------
         '''
 
-        num_day_pred = 7
+        prediction_len = 7
         buildings = ['1A', '1B', '1C', '1D', '1E', '2A', '2B', '2C', '2D', '2E']
 
         pred_date_start = datetime.datetime.now().date()
         # debug for the date 2021-03-15
 
-        pred_date_end = pred_date_start + datetime.timedelta(days=num_day_pred - 1)
+        pred_date_end = pred_date_start + datetime.timedelta(days=prediction_len - 1)
 
-        hist_date_start = pred_date_start - datetime.timedelta(days=context_len + num_day_pred + 1)
+        hist_date_start = pred_date_start - datetime.timedelta(days=context_len + prediction_len + 1)
         hist_date_end = pred_date_start - datetime.timedelta(days=1)
         #
         print(f'forecast date {pred_date_start} - {pred_date_end}')
-        print(f'historical date {hist_date_start} - {hist_date_end}')
+        print(f'context date {hist_date_start} - {hist_date_end}')
 
         electricity_path = "../data/electricity"
         future_weather_path = "../data/weather/future"
         forecast_crawler = visualcrossing_crawler()
-        pred_weather_csv = f'{future_weather_path}/future_weather.csv'
-        forecast_crawler.crawl_forecast(pred_date_start, pred_date_end, pred_weather_csv)
+        pred_weather_csv = f'{future_weather_path}/future_weather_{pred_date_start}_{pred_date_end}.csv'
+        if not os.path.exists(pred_weather_csv):
+            forecast_crawler.crawl_forecast(pred_date_start, pred_date_end, pred_weather_csv)
         future_generator = dataset_generator(future_weather_path, electricity_path)
 
         # # compress the future data. The data will be saved in future_weather_path/future_weather.csv
@@ -59,7 +60,7 @@ class prediction_api:
         # get historical whether data and electricity data
         history_weather_path = "../data/weather/history"
 
-        hist_weather_csv = f'{history_weather_path}/pre-processed_weather.csv'
+        hist_weather_csv = f'{history_weather_path}/history_weather_vc.csv'
         historical_generator = dataset_generator(history_weather_path, electricity_path)
 
         hist_df_list = historical_generator.generate_dataset(buildings, hist_date_start, hist_date_end,
@@ -79,7 +80,7 @@ class prediction_api:
 
         # run prediction
         # print(f'read csv file from {pred_data_path}')
-        model = my_deepAR_model(model_path, 24 * context_len, 24 * num_day_pred, buildings)
+        model = my_deepAR_model(model_path, 24 * context_len, 24 * prediction_len, buildings)
         prediction = model.predict(pred_data_path)
 
         prediction_path = "./prediction.json"
@@ -89,7 +90,8 @@ class prediction_api:
         print("Prediction finishes")
         return prediction
 
-    def custom_prediction(self, model_path, pred_date, hist_weather_end, context_len, prediction_len=7) -> (dict, dict):
+    def custom_prediction(self, model_path, pred_date, context_end, context_len, prediction_len=7,
+                          buildings=None) -> (dict, dict):
         '''
         allow users to use custom weather as the input data for the prediction of the start day.
         The prediction result is stored in the file history_prediction.json.
@@ -97,76 +99,74 @@ class prediction_api:
         Parameters
         -------
         model_path: the path of pytorch checkpoint file, str: %Y%m%d.
-        pred_date: the start date of prediciton,  str. The pred_date should be one week ago from today.
-        hist_weather_end: the end date of custom input weather, str: %Y%m%d.
+        pred_date: the start date of prediction,  str. The pred_date should be one week ago from today.
+        context_end: the end date of custom input weather, str: %Y%m%d.
 
         Returns
         -------
         prediction: the prediction result of custom context weather condition data, dict.
         '''
         # generate the input dataset
-        buildings = ['1A', '1B', '1C', '1D', '1E', '2A', '2B', '2C', '2D', '2E']
 
+        if buildings is None:
+            buildings = ['1A', '1B', '1C', '1D', '1E', '2A', '2B', '2C', '2D', '2E']
         pred_date_start = datetime.datetime.strptime(pred_date, "%Y%m%d").date()
         pred_date_end = pred_date_start + datetime.timedelta(days=prediction_len - 1)
 
-        hist_date_end = datetime.datetime.strptime(hist_weather_end, "%Y%m%d").date()
+        hist_date_end = datetime.datetime.strptime(context_end, "%Y%m%d").date()
         hist_date_start = (hist_date_end - datetime.timedelta(days=context_len + prediction_len - 1))
 
         print(f'forecast date {pred_date_start} - {pred_date_end}')
-        print(f'historical date {hist_date_start} - {hist_date_end}')
+        print(f'context date {hist_date_start} - {hist_date_end}')
 
-        history_weather_path = "../data/weather/history"
+        context_weather = "../data/weather/history"
         electricity_path = "../data/electricity"
-        hist_weather_csv = f'{history_weather_path}/pre-processed_weather.csv'
-        historical_generator = dataset_generator(history_weather_path, electricity_path)
+        context_weather_csv = f'{context_weather}/history_weather_vc.csv'
+        context_generator = dataset_generator(context_weather, electricity_path)
 
-        hist_df_list = historical_generator.generate_dataset(buildings, hist_date_start, hist_date_end,
-                                                             hist_weather_csv, start_idx=1, weather_stride=2)
+        context_df_list = context_generator.generate_dataset(buildings, hist_date_start, hist_date_end,
+                                                             context_weather_csv, start_idx=1, weather_stride=2)
 
-        pred_df_list = historical_generator.generate_dataset(buildings, pred_date_start, pred_date_end,
-                                                             hist_weather_csv, start_idx=1, weather_stride=2)
+        prediction_df_list = context_generator.generate_dataset(buildings, pred_date_start, pred_date_end,
+                                                                context_weather_csv, start_idx=1, weather_stride=2)
 
-        # combine historical data and forecast weather data together as the condition data
-        total_df_list = []
+        # combine historical data and forecast weather data together as the input data
+        input_df_list = []
         for i in range(len(buildings)):
-            pred_df_list[i]['val'] = 0
-            df = pd.concat((hist_df_list[i], pred_df_list[i]), axis=0)
+            prediction_df_list[i]['val'] = 0
+            df = pd.concat((context_df_list[i], prediction_df_list[i]), axis=0)
             df['time_idx'] = range(len(df))
-            total_df_list.append(df)
-        input_df = pd.concat(total_df_list)
+            input_df_list.append(df)
+        input_df = pd.concat(input_df_list)
 
-        pred_data_path = f'{self.input_path}/input_data-pred_date={pred_date}-weather_start={hist_date_start}.csv'
-        input_df.to_csv(pred_data_path, index=False)
+        input_data = f'{self.input_path}/input_data-pred_date={pred_date}-weather_start={hist_date_start}.csv'
+        input_df.to_csv(input_data, index=False)
         # run prediction
         model = my_deepAR_model(model_path, 24 * context_len, 24 * prediction_len, buildings)
-        prediction = model.predict(pred_data_path)
+        prediction = model.predict(input_data)
 
         # print("Prediction finishes")
         # fetch the original data
         original_usage = {}
+        test_date_start = datetime.datetime.strptime(context_end, "%Y%m%d").date() + datetime.timedelta(days=1)
+        test_date_end = test_date_start + datetime.timedelta(days=prediction_len - 1)
         for idx in range(len(buildings)):
             building = buildings[idx]
-            building_path = f"../data/electricity/{building}.csv"
+            building_path = f"../data/electricity/{building}_complete.csv"
             df_electricity = pd.read_csv(building_path)
-            df_electricity['time'] = pd.to_datetime(df_electricity['time']) - datetime.timedelta(hours=1)
-            df_electricity['time'] = pd.to_datetime(df_electricity['time']) + datetime.timedelta(hours=8)
+            df_electricity['time'] = pd.to_datetime(df_electricity['time']) + datetime.timedelta(hours=7)
 
-            mask_ele = (df_electricity['time'].dt.date >= pred_date_start) & (
-                    df_electricity['time'].dt.date <= pred_date_end)
-            df_electricity = df_electricity.loc[mask_ele]
-            # set the value <= 0 as the previous value
-            val_mask = df_electricity['val'] <= 0
-            df_electricity.loc[val_mask, 'val'] = np.nan
-            # fill the nan with the previous value
-            df_electricity = df_electricity.fillna(method="ffill")
+            mask_electricity = (df_electricity['time'].dt.date >= test_date_start) & (
+                    df_electricity['time'].dt.date <= test_date_end)
+            df_electricity = df_electricity.loc[mask_electricity]
+            # set the 'val' column of the dataframe to nan if it is less or equal to 0
             original_usage[building] = df_electricity['val'].values.tolist()
 
-        origin_path = f"{self.output_path}/origin-pred_date={pred_date}-weather_date={hist_date_start}.json"
+        origin_path = f"{self.output_path}/origin-pred_date={pred_date}.json"
         with open(origin_path, "w") as f:
             json.dump(original_usage, f)
 
-        prediction_path = f"{self.output_path}/prediction-pred_date={pred_date}-weather_date={hist_date_start}.json"
+        prediction_path = f"{self.output_path}/prediction-pred_date={pred_date}.json"
         with open(prediction_path, "w") as f:
             json.dump(prediction, f)
 
@@ -175,15 +175,18 @@ class prediction_api:
 
 def unit_test():
     predictor = prediction_api()
-    model_path = "./my_model/hidden=28-rnn_layer=2-context_day=30-min_lr=0.0001.ckpt"
-    pred_date_start = datetime.datetime.strptime("20210315", "%Y%m%d")
-    num_day_context = 30
-    weather_start_date = pred_date_start - datetime.timedelta(days=num_day_context + 1)
-    weather_start_date = weather_start_date.strftime("%Y%m%d")
+    model_path = "./my_model/hidden=38-rnn_layer=3-context_day=3-min_lr=0.001.ckpt"
+    pred_date_start = datetime.datetime.strptime("20220315", "%Y%m%d")
+    context_len = 30
+    context_end_date = pred_date_start - datetime.timedelta(1)
+    context_end_date = context_end_date.strftime("%Y%m%d")
     pred_date_start = pred_date_start.strftime("%Y%m%d")
-    predictor.custom_prediction(model_path, pred_date_start, weather_start_date, num_day_context)
-    # predictor.lastest_prediction(model_path, num_day_context)
+    predictor.custom_prediction(model_path, pred_date_start, context_end_date, context_len)
+
+
+def rollback_unit_test():
+    pass
 
 
 if __name__ == "__main__":
-    unit_test()
+    rollback_unit_test()

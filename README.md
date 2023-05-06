@@ -30,10 +30,16 @@ See the performance of model on ZJUI buildings for predicting 1 week.
 
 `python test_shell.py buildings_1week 7`
 
+`nohup python test_shell.py buildings_1week 7 > /dev/null 2>&1 &`
+
 See the performance of model on ZJUI buildings for predicting 1 day.
 
 `python test_shell.py buildings_24hours 1`
 
+`nohup python test_shell.py buildings_24hours 1 > /dev/null 2>&1 &`
+
 See the performance of model on ZJUI campus for predicting 1 day, where the data comes from electricity company.
 
 `python test_shell.py campus_24hours 1`
+
+`nohup python test_shell.py campus_24hours 1 > /dev/null 2>&1 &`

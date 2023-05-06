@@ -1,18 +1,16 @@
 import os.path
-
 import pandas as pd
 import pytorch_lightning as pl
-import pytorch_forecasting as pf
-import torch
 from pytorch_forecasting import TimeSeriesDataSet
 from pytorch_forecasting.data import NaNLabelEncoder
 from utils import train_api
 import logging
 import datetime
-import argparse
+from generate_train_dataset_buildings import generate_train_dataset_buildings
+import time
 
 
-def train(data, hidden_size, rnn_layer, context_day, prediction_len, min_lr, task_name):
+def self_train(data, hidden_size, rnn_layer, context_day, prediction_len, min_lr):
     # create dataset and dataloaders
     max_encoder_length = int(24 * context_day)
     max_prediction_length = int(24 * prediction_len)
@@ -54,7 +52,7 @@ def train(data, hidden_size, rnn_layer, context_day, prediction_len, min_lr, tas
         train=False, batch_size=batch_size, num_workers=0, batch_sampler="synchronized"
     )
     model_name = f"hidden={hidden_size}-rnn_layer={rnn_layer}-context_day={context_day}-min_lr={min_lr}"
-    save_folder_path = f"../data/train/{task_name}/{model_name}"
+    save_folder_path = "my_model"
     if not os.path.exists(save_folder_path):
         os.mkdir(save_folder_path)
 
@@ -66,53 +64,42 @@ def train(data, hidden_size, rnn_layer, context_day, prediction_len, min_lr, tas
     return loss
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--hidden_size', type=int, help="hidden size of deepAR network")
-    parser.add_argument('--rnn_layers', type=int, help="number of rnn layers in deepAR network")
-    parser.add_argument('--context_day', type=int, help="number of encoder")
-    parser.add_argument('--prediction_len', type=int, help="number of prediction")
-    parser.add_argument('--task_name', type=str, help="the name of task")
-    parser.add_argument('--train_dataset', type=str, help="the path of training dataset")
-
-    args = parser.parse_args()
-    hidden = args.hidden_size
-    rnn = args.rnn_layers
-    context = args.context_day
+def auto_train():
+    hidden = 38
+    rnn = 3
+    context = 3
+    prediction_len = 1
 
     pl_seed = 42
     pl.seed_everything(pl_seed)
-    logger = logging.getLogger(f"train_{args.task_name}")
-    logging.basicConfig(filename=f'train_{args.task_name}.txt',
+    logger = logging.getLogger(f"train_auto")
+    logging.basicConfig(filename=f'train_auto.txt',
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s-%(funcName)s',
                         level=logging.INFO,
                         filemode='w')
 
-    logger.info(f"Pytorch-version={torch.__version__}")
-    logger.info(f"Pytorch-forecasting={pf.__version__}")
-    logger.info(f"Pytorch-lightning={pl.__version__}")
     logger.critical(f"Training starts at {datetime.datetime.now()}")
-    min_lr_list = [10 ** y for y in range(-6, -2)]
+    min_lr = 1e-3
+    if not os.path.exists("my_model"):
+        os.mkdir("my_model")
 
-    if not os.path.exists(f"../data/train/{args.task_name}"):
-        os.mkdir(f"../data/train/{args.task_name}")
-
-    train_dataset_path = args.train_dataset
+    train_dataset_path = generate_train_dataset_buildings()
     data = pd.read_csv(train_dataset_path)
     data = data.fillna(method="ffill")
     data = data.astype(dict(Building=str))
 
-    for min_lr in min_lr_list:
-        # record the hyperparameters
-        logger.critical(
-            f"hidden_size={hidden}, rnn_layers={rnn}, context_day={context}, prediction_len = {args.prediction_len}, min_lr={min_lr}, pl_seed = {pl_seed}, task_name = {args.task_name}")
-        val_loss = train(data, hidden_size=hidden, rnn_layer=rnn, context_day=context, min_lr=min_lr,
-                         task_name=args.task_name, prediction_len=args.prediction_len)
-        logger.critical(f"loss = {val_loss}")
+    # record the parameters
+    logger.critical(
+        f"hidden_size={hidden}, rnn_layers={rnn}, context_day={context}, prediction_len = {prediction_len}, min_lr={min_lr}, pl_seed = {pl_seed}")
+    val_loss = self_train(data, hidden_size=hidden, rnn_layer=rnn, context_day=context, min_lr=min_lr,
+                          prediction_len=prediction_len)
+    logger.critical(f"loss = {val_loss}")
 
     logger.info("Train finish\n")
 
 
 if __name__ == "__main__":
     # RECORD THE HYPERPARAMETERS: hidden=38-rnn_layer=3-context_day=3-min_lr=0.001
-    main()
+    auto_train()
+    # sleep for 1 day
+    time.sleep(86400)

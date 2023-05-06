@@ -1,9 +1,8 @@
 import os.path
 import sys
 
-from pred_api import prediction_api
+from prediction_api import prediction_api
 import datetime
-import pandas as pd
 import numpy as np
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 import logging
@@ -28,17 +27,16 @@ def test(model_name, task_name, prediction_len):
     # data prediction for building 1A.
     buildings = ['1A', '1B', '1C', '1D', '1E', '2A', '2B', '2C', '2D', '2E']
 
-    # 20210315 - 20210430
-    pred_date_start = datetime.datetime.strptime("20210315", "%Y%m%d")
+    # 20221101 - 20221201
+    pred_date_start = datetime.datetime.strptime("2020901", "%Y%m%d")
 
-    # pred_date_end = datetime.datetime.strptime("20210317", "%Y%m%d")
-    pred_date_end = datetime.datetime.strptime("20210430", "%Y%m%d")
+    # pred_date_end = datetime.datetime.strptime("20221102", "%Y%m%d")
+    pred_date_end = datetime.datetime.strptime("20201001", "%Y%m%d")
 
     # create a datetime list from pred_date_start to pred_date_end
     pred_date_list = [pred_date_start + datetime.timedelta(days=i) for i in
                       range((pred_date_end - pred_date_start).days + 1)]
 
-    metrics_data = np.zeros((len(buildings), 3))
     logging.basicConfig(filename=f"test.log",
                         level=logging.INFO)
     # Input string
@@ -55,8 +53,6 @@ def test(model_name, task_name, prediction_len):
             context_len = int(item.split("=")[1])
             break
 
-    num_day_context = context_len + prediction_len
-
     logger = logging.getLogger(f"Metrics for the model {model_name}:\n")
     logger.info(context_len)
     logger.critical(f"context length: {context_len}\n")
@@ -70,9 +66,9 @@ def test(model_name, task_name, prediction_len):
         # print(pred_date)
         pred_day = pred_date.strftime("%Y%m%d")
 
-        weather_end_date = pred_date - datetime.timedelta(days=1)
-        weather_end_date = weather_end_date.strftime("%Y%m%d")
-        prediction_result, original_buildings = prediction.custom_prediction(model_path, pred_day, weather_end_date,
+        context_end_date = pred_date - datetime.timedelta(days=1)
+        context_end_date = context_end_date.strftime("%Y%m%d")
+        prediction_result, original_buildings = prediction.custom_prediction(model_path, pred_day, context_end_date,
                                                                              context_len,
                                                                              prediction_len)
         # set the logger name as "metrics"
@@ -105,6 +101,10 @@ def test(model_name, task_name, prediction_len):
         building_test_y = test_y[idx, :, :].flatten()
         building_test_pred = test_pred[idx, :, :].flatten()
         # calculate the RMSE, MAPE, MAE
+        # print(buildings[idx])
+        # print(building_test_y)
+        # print("\n\n")
+        # print(building_test_pred)
         rmse = np.sqrt(mean_squared_error(building_test_y, building_test_pred))
         mape = np.mean(np.abs((building_test_y - building_test_pred) / building_test_y)) * 100
         mae = mean_absolute_error(building_test_y, building_test_pred)
