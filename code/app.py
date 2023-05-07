@@ -6,7 +6,7 @@ import sys
 from flask import Flask
 from flask_cors import CORS, cross_origin
 
-from pred_api import prediction_api
+from prediction_api import prediction_api
 
 
 

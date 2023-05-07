@@ -4,13 +4,12 @@ import re
 import os
 import warnings
 import pandas as pd
-
+import numpy as np
 import matplotlib.pyplot as plt
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import EarlyStopping
 from pytorch_forecasting import DeepAR, TimeSeriesDataSet
 from pytorch_forecasting.data import NaNLabelEncoder
-import numpy as np
 import logging
 
 warnings.filterwarnings("ignore")
@@ -23,37 +22,6 @@ def remove_unit(x):
         return float(match.group(0))  # 返回数值部分
     else:
         return x
-
-
-def check_incomplete_electricity_dt(electricity_csv):
-    # Load the data into a pandas dataframe
-    df = pd.read_csv(electricity_csv)
-
-    # Convert the timestamp column to datetime type
-    df['time'] = pd.to_datetime(df['time'])
-
-    # Set the timestamp column as the index of the dataframe
-    df.set_index('time', inplace=True)
-
-    # Resample the dataframe to hourly frequency
-    df_resampled = df.resample('H').mean()
-
-    # Get the list of dates where the resampled data is missing
-    missing_dates = df_resampled[df_resampled.isna().any(axis=1)].index.strftime('%Y-%m-%d').unique().tolist()
-
-    current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    program_name = "logger"
-    logger = open(f"{program_name}.log", 'w')
-    logger.write(f"\n\n\nThe program 'check_incomplete_electricity_dt' is running at {current_time}\n")
-    # Print the missing dates
-    logger.write("Dates with non-hourly data:\n")
-
-    count = 0
-    for date in missing_dates:
-        if count % 5 == 0:
-            logger.write("\n")
-        logger.write(f" {str(date)} ")
-        count += 1
 
 
 # generator the dataset containing weather condition and
@@ -108,18 +76,14 @@ class dataset_generator:
         weather_sub = weather_sub[['timestamp', 'Temperature', 'Humidity', 'Condition']]
 
         for building in name_list:
-            electricity_path = f'{self.history_electricity_folder}/{building}.csv'
+            electricity_path = f'{self.history_electricity_folder}/{building}_complete.csv'
             df_ele = pd.read_csv(electricity_path)
+            # change the name of timestamp into time
+            df_ele.rename(columns={'timestamp': 'time'}, inplace=True)
             # Turn from UTC into UTC+8. -1 to align the val so that each values represent the electricity consumption in the next data.
             df_ele['time'] = pd.to_datetime(df_ele['time']) + datetime.timedelta(hours=8) - datetime.timedelta(hours=1)
 
             mask_ele = (df_ele['time'].dt.date >= start_date) & (df_ele['time'].dt.date <= end_date)
-            # set the 'val' column of the dataframe to nan if it is less or equal to 0
-            val_mask = df_ele['val'] <= 0
-            df_ele.loc[val_mask, 'val'] = np.nan
-            # fill the nan with the previous value
-            df_ele = df_ele.fillna(method="ffill")
-
             # print(f"the number of losing electricity data for building {building} is {np.sum(val_mask)}")
             electricity_sub = df_ele[mask_ele]['val']
             training_df = pd.concat((weather_sub.reset_index(drop=True), electricity_sub.reset_index(drop=True)),
@@ -304,3 +268,127 @@ class my_deepAR_model:
             pred_dict[self.building_series[idx]] = predictions[idx].tolist()
 
         return pred_dict
+
+    def rollback_predict(self, input_data_path):
+        '''
+        Predict the future electricity usage with the prediction data.
+        Parameters
+        ----------
+        input_data_path: The path of necessary data for prediction, including historical weather and electricity usage data
+                        as well as the future weather data, str.
+
+        Returns
+        -------
+
+        '''
+        data = pd.read_csv(input_data_path)
+        data = data.fillna(method='pad')
+        cutoff = data["time_idx"].max() - self.predictor_length
+
+        num_days = int(self.predictor_length / 24)
+
+        history = TimeSeriesDataSet(
+            data[lambda x: x.index <= cutoff],
+            time_idx="time_idx",
+            target="val",
+            categorical_encoders={"Building": NaNLabelEncoder().fit(data.Building),
+                                  "Condition": NaNLabelEncoder().fit(data.Condition)},
+            group_ids=["Building"],
+            static_categoricals=[
+                "Building"
+            ],
+
+            time_varying_known_reals=["Temperature", "Humidity", "is_weekend"],
+            time_varying_known_categoricals=["Condition"],
+            allow_missing_timesteps=True,
+            time_varying_unknown_reals=["val"],
+            max_encoder_length=self.context_length,
+            max_prediction_length=24
+        )
+        print(self.predictor_length)
+        pred_dict = {}
+        batch_size = 128
+        for d in range(num_days):
+            print(f"day: {d}")
+            pred_start = (cutoff + 1) + d * 24
+            prediction_data = TimeSeriesDataSet.from_dataset(history, data, min_prediction_idx=pred_start)
+            pred_dataloader = prediction_data.to_dataloader(train=False, batch_size=batch_size, num_workers=0,
+                                                            batch_sampler='synchronized')
+
+            predictions = self.model.predict(pred_dataloader)
+            for idx in range(len(self.building_series)):
+                data[pred_start:pred_start + 24]["val"] = predictions[idx].tolist()
+                pred_dict[self.building_series[idx]] = pred_dict.get(self.building_series[idx], []) + predictions[
+                    idx].tolist()
+
+        return pred_dict
+
+
+class electricity_complete_api:
+    '''
+    fulfill the electricity usage data if the data is incomplete in 24 hours for a day.
+    '''
+
+    def fetch_blank_data(self, electricity_sub, electricity_sub_date):
+        '''
+
+        Parameters
+        ----------
+        electricity_sub: the electricity data for a specific date, pandas.dataframe.
+
+        Returns
+        -------
+        the data frame with timestamp that from 0:00 to 23:00 hourly in one day. The lack data value is 0.
+        '''
+        # the 0:00 of the date, timezone = UTC
+        zero_time = datetime.datetime.combine(electricity_sub_date, datetime.time(0, 0)).replace(
+            tzinfo=datetime.timezone.utc)
+        # create a data frame with timestamp that has 24 hours in that date
+        fufill_df = pd.DataFrame(columns=electricity_sub.columns)
+        for h in range(24):
+            fufill_df = fufill_df.append(
+                {'time': zero_time + datetime.timedelta(hours=h), 'val': 0},
+                ignore_index=True)
+        for idx in range(len(electricity_sub)):
+            # get the number of hours between the 0:00 of the date and the time of electricity_sub
+            # turn the datatime into no timezones
+            exist_hour = electricity_sub['time'].iloc[idx]
+            hours_diff = (exist_hour - zero_time).total_seconds() / 3600
+            fufill_df.iloc[int(hours_diff)] = electricity_sub.iloc[idx]
+        # electricity_sub.to_csv("electricity_sub.csv", index=False)
+        # fufill_df.to_csv("fufill_df.csv", index=False)
+        return fufill_df
+
+    def complete_electricity(self):
+        buildings = ['1D']
+        for building in buildings:
+            print(building)
+            df = pd.read_csv(f"../data/electricity/{building}.csv")
+            df['time'] = pd.to_datetime(df['time']) + datetime.timedelta(hours=7)
+            # data range from the first date to last date in the data frame
+            start_date = df['time'].min().date()
+            end_date = df['time'].max().date()
+            print(f"{start_date}, {end_date}")
+            # for each date in the data frame
+            for date in pd.date_range(start_date, end_date):
+                # get the electricity data for the specific date
+                electricity_sub = df[df['time'].dt.date == date]
+                # if the electricity data is incomplete, fulfill the data
+                if len(electricity_sub['time']) < 24:
+                    print(f"incomplete date for date {date}")
+                    fufill_df = self.fetch_blank_data(electricity_sub, date)
+                    # remove the electricity_sub from the whole data frame
+                    df = df[df['time'].dt.date != date]
+                    df = df.append(fufill_df)
+                # sort the data frame by time
+            df = df.sort_values(by=['time'])
+            df['time'] = pd.to_datetime(df['time']) - datetime.timedelta(hours=7)
+            # set the 'val' column of the dataframe to nan if it is less than 0 or greater than 1000
+            val_mask = (df['val'] <= 0.0) | (df['val'] >= 50.0)
+            df.loc[val_mask, 'val'] = np.nan
+            # fill the nan with the mean of previous 48 data points
+            for i in range(48, len(df)):
+                if not np.isnan(df['val'].iloc[i]):
+                    continue
+                df['val'].iloc[i] = np.mean(df['val'].iloc[i - 48:i])
+            df.to_csv(f"../data/electricity/{building}_complete.csv", index=False)
