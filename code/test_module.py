@@ -70,7 +70,7 @@ def test(model_name, task_name, prediction_len):
         context_end_date = context_end_date.strftime("%Y%m%d")
         prediction_result, original_buildings = prediction.custom_prediction(model_path, pred_day, context_end_date,
                                                                              context_len,
-                                                                             prediction_len)
+                                                                             prediction_len, eval_model=True)
         # set the logger name as "metrics"
         # start_date = datetime.datetime.strptime(pred_day, "%Y%m%d")
         # end_date = start_date + datetime.timedelta(days=prediction_len - 1)

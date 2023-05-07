@@ -98,7 +98,7 @@ class dataset_generator:
             training_df['is_weekend'] = training_df['timestamp'].dt.dayofweek.isin([5, 6])
             # check whether the day is between June and September or between January and February
             training_df['is_holiday'] = ((training_df['timestamp'].dt.month >= 6) & (
-                    training_df['timestamp'].dt.month <= 9)) | ((training_df['timestamp'].dt.month >= 1) & (
+                    training_df['timestamp'].dt.month <= 8)) | ((training_df['timestamp'].dt.month >= 1) & (
                     training_df['timestamp'].dt.month <= 2))
 
             df_list.append(training_df)
@@ -183,8 +183,9 @@ class train_api:
 
         # start train
         early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-4, patience=10, verbose=False, mode="min")
+        epochs_number = 200
         trainer = pl.Trainer(
-            max_epochs=50,
+            max_epochs=epochs_number,
             gpus=1,
             enable_model_summary=True,
             gradient_clip_val=1e-2,
@@ -254,7 +255,8 @@ class my_deepAR_model:
                 "Building"
             ],
 
-            time_varying_known_reals=["Temperature", "Humidity", "is_weekend", "is_holiday"],
+            # TODO: add is_holiday feature once the new model is trained
+            time_varying_known_reals=["Temperature", "Humidity", "is_weekend"],
             time_varying_known_categoricals=["Condition"],
             allow_missing_timesteps=True,
             time_varying_unknown_reals=["val"],
@@ -303,7 +305,8 @@ class my_deepAR_model:
                 "Building"
             ],
 
-            time_varying_known_reals=["Temperature", "Humidity", "is_weekend", "is_holiday"],
+            # TODO: add is_holiday feature once the new model is trained
+            time_varying_known_reals=["Temperature", "Humidity", "is_weekend"],
             time_varying_known_categoricals=["Condition"],
             allow_missing_timesteps=True,
             time_varying_unknown_reals=["val"],

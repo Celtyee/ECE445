@@ -32,7 +32,7 @@ def self_train(data, hidden_size, rnn_layer, context_day, prediction_len, min_lr
             "Building"
         ],
 
-        time_varying_known_reals=["Temperature", "Humidity", "is_weekend"],
+        time_varying_known_reals=["Temperature", "Humidity", "is_weekend", "is_holiday"],
         time_varying_known_categoricals=["Condition"],
         allow_missing_timesteps=True,
         time_varying_unknown_reals=["val"],
@@ -83,7 +83,7 @@ def auto_train():
     if not os.path.exists("my_model"):
         os.mkdir("my_model")
 
-    train_dataset_path = generate_train_dataset_buildings()
+    train_dataset_path = generate_train_dataset_buildings(auto_train=True)
     data = pd.read_csv(train_dataset_path)
     data = data.fillna(method="ffill")
     data = data.astype(dict(Building=str))
