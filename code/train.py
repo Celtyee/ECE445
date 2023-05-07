@@ -34,7 +34,7 @@ def train(data, hidden_size, rnn_layer, context_day, prediction_len, min_lr, tas
             "Building"
         ],
 
-        time_varying_known_reals=["Temperature", "Humidity", "is_weekend"],
+        time_varying_known_reals=["Temperature", "Humidity", "is_weekend", "is_holiday"],
         time_varying_known_categoricals=["Condition"],
         allow_missing_timesteps=True,
         time_varying_unknown_reals=["val"],

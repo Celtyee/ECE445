@@ -96,6 +96,11 @@ class dataset_generator:
             # print(training_df.columns)
             # "is_weekend" is true if the day is weekend and the day is in summer holiday or winter holiday
             training_df['is_weekend'] = training_df['timestamp'].dt.dayofweek.isin([5, 6])
+            # check whether the day is between June and September or between January and February
+            training_df['is_holiday'] = ((training_df['timestamp'].dt.month >= 6) & (
+                    training_df['timestamp'].dt.month <= 9)) | ((training_df['timestamp'].dt.month >= 1) & (
+                    training_df['timestamp'].dt.month <= 2))
+
             df_list.append(training_df)
 
         return df_list
@@ -249,7 +254,7 @@ class my_deepAR_model:
                 "Building"
             ],
 
-            time_varying_known_reals=["Temperature", "Humidity", "is_weekend"],
+            time_varying_known_reals=["Temperature", "Humidity", "is_weekend", "is_holiday"],
             time_varying_known_categoricals=["Condition"],
             allow_missing_timesteps=True,
             time_varying_unknown_reals=["val"],
@@ -298,7 +303,7 @@ class my_deepAR_model:
                 "Building"
             ],
 
-            time_varying_known_reals=["Temperature", "Humidity", "is_weekend"],
+            time_varying_known_reals=["Temperature", "Humidity", "is_weekend", "is_holiday"],
             time_varying_known_categoricals=["Condition"],
             allow_missing_timesteps=True,
             time_varying_unknown_reals=["val"],
