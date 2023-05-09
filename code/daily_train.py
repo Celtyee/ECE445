@@ -9,6 +9,9 @@ import datetime
 from generate_train_dataset_buildings import generate_train_dataset_buildings
 import time
 from fetch_weather import fetch_weather_daily
+from merge_electricity_data import merge_electricity_oneday
+
+logger = logging.getLogger('daily_train')
 
 
 def self_train(data, hidden_size, rnn_layer, context_day, prediction_len, min_lr):
@@ -66,7 +69,7 @@ def self_train(data, hidden_size, rnn_layer, context_day, prediction_len, min_lr
     return loss
 
 
-def auto_train():
+def daily_train():
     # hyper-parameters for training
     hidden = 38
     rnn = 3
@@ -75,8 +78,7 @@ def auto_train():
     prediction_len = 1
     pl_seed = 42
     pl.seed_everything(pl_seed)
-    logger = logging.getLogger(f"train_auto")
-    logging.basicConfig(filename=f'train_auto.log',
+    logging.basicConfig(filename='daily_train.log',
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s-%(funcName)s',
                         level=logging.INFO,
                         filemode='w')
@@ -86,7 +88,7 @@ def auto_train():
     if not os.path.exists("my_model"):
         os.mkdir("my_model")
 
-    train_dataset_path = generate_train_dataset_buildings(auto_train=True)
+    train_dataset_path = generate_train_dataset_buildings(daily_train=True)
     data = pd.read_csv(train_dataset_path)
     data = data.fillna(method="ffill")
     data = data.astype(dict(Building=str))
@@ -102,10 +104,9 @@ def auto_train():
 
 
 if __name__ == "__main__":
-    today = datetime.datetime.today()
-    fetch_weather_daily(today.date())
-
-    generate_train_dataset_buildings(auto_train=True)
-    auto_train()
+    fetch_date = datetime.datetime.today() - datetime.timedelta(days=1)
+    fetch_weather_daily(fetch_date.date())
+    merge_electricity_oneday(fetch_date.date())
+    daily_train()
     # sleep for 1 day
     # time.sleep(86400)

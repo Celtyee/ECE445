@@ -4,7 +4,6 @@ import os
 import json
 from utils import dataset_generator, my_deepAR_model
 from wunderground_crawler.utils import visualcrossing_crawler
-import numpy as np
 
 
 class prediction_api:

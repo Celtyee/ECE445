@@ -5,7 +5,7 @@ import datetime
 import pandas as pd
 
 
-def generate_train_dataset_buildings(auto_train=False):
+def generate_train_dataset_buildings(daily_train=False):
     train_path = "../data/train"
     if not os.path.exists(train_path):
         os.makedirs(train_path)
@@ -16,8 +16,8 @@ def generate_train_dataset_buildings(auto_train=False):
 
     generator = dataset_generator(weather_path, electricity_path)
     buildings = ['1A', '1B', '1C', '1D', '1E', '2A', '2B', '2C', '2D', '2E']
-    start_date = datetime.datetime.strptime("20210201", "%Y%m%d").date()
-    if auto_train:
+    start_date = datetime.datetime.strptime("20220101", "%Y%m%d").date()
+    if daily_train:
         end_date = datetime.datetime.today().date() - datetime.timedelta(days=8)
     else:
         end_date = datetime.datetime.strptime("20230430", "%Y%m%d").date()

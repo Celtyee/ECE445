@@ -79,7 +79,7 @@ def fetch_history_weather_monthly(start_date, end_date):
 
 def fetch_weather_daily(fetch_date):
     '''
-    Get the weather condition for a specific day.
+    Get the weather condition for a specific day. Merge the daily weather into the total weather.
     Parameters
     ----------
     fetch_date: datetime.datetime.date(). The date of specific day.
@@ -94,14 +94,15 @@ def fetch_weather_daily(fetch_date):
         os.mkdir(daily_path)
         print('create the daily folder')
     save_path = f'{daily_path}/weather{fetch_date}.csv'
-    if os.path.exists(save_path):
-        print('the file already exists')
-        return
-    df_fetch = vc.fetch_history(fetch_date, fetch_date, save_path)
+    if not os.path.exists(save_path):
+        df_fetch = vc.fetch_history(fetch_date, fetch_date, save_path)
+    else:
+        df_fetch = pd.read_csv(save_path)
     #     attach the daily weather to the total weather
-    df_history_weahter = pd.read_csv("../data/weather/history/history_weather_vc.csv")
-    df_history_weahter['timestamp'] = pd.to_datetime(df_history_weahter['timestamp'])
-    df_history_old = df_history_weahter[df_history_weahter['timestamp'].date() < fetch_date]
+    df_history_weather = pd.read_csv("../data/weather/history/history_weather_vc.csv")
+    # set the date type as datetime.datetime
+    df_history_weather['timestamp'] = pd.to_datetime(df_history_weather['timestamp'])
+    df_history_old = df_history_weather[df_history_weather['timestamp'].dt.date < fetch_date]
     df_history_new = pd.concat([df_history_old, df_fetch], axis=0)
     df_history_new.to_csv('../data/weather/history/history_weather_vc.csv', index=False)
 

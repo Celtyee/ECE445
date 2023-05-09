@@ -177,7 +177,7 @@ class train_api:
             early_stop_threshold=100
         )
         print(f"suggested learning rate: {res.suggestion()}")
-        fig = res.plot(show=True, suggest=True)
+        fig = res.plot(show=False, suggest=True)
         fig.savefig(f"{save_folder_path}/res.png")
         net.hparams.learning_rate = res.suggestion()
 

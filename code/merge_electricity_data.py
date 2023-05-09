@@ -54,27 +54,31 @@ def merge_electricity_oneday(input_date):
         #     continue
         df_building_new = pd.read_csv(csv_path)
         df_building_new['time'] = pd.to_datetime(df_building_new['time']).dt.tz_localize('UTC')
-        start_time = df_building_new['time'].min()
-        df_building_old = pd.read_csv(f"../data/electricity/{building}_complete.csv")
-        df_building_old['time'] = pd.to_datetime(df_building_old['time'])
-        df_building_old = df_building_old[df_building_old['time'] < start_time]
         df_building_new['time'] += datetime.timedelta(hours=17)
         df_building_new = completeAPI.fetch_blank_data(df_building_new, select_date)
         df_building_new['time'] -= datetime.timedelta(hours=17)
-
         val_mask = (df_building_new['val'] <= 0.0) | (df_building_new['val'] >= 500.0)
         df_building_new.loc[val_mask, 'val'] = np.nan
+
+        start_time = df_building_new['time'].min()
+        # print(start_time)
+        df_building_old = pd.read_csv(f"../data/electricity/{building}_complete.csv")
+        df_building_old['time'] = pd.to_datetime(df_building_old['time'])
+        df_building_old = df_building_old[df_building_old['time'] < start_time]
+
         df_building_complete = pd.concat([df_building_old, df_building_new])
+        # print(len(df_building_old), len(df_building_complete))
         for i in range(len(df_building_old), len(df_building_complete)):
-            if not np.isnan(df_building_complete.loc[i, 'val']):
+            if not np.isnan(df_building_complete['val'].iloc[i]):
                 continue
-            df_building_complete.loc[i, 'val'] = np.mean(df_building_complete['val'].iloc[i - 48:i])
+            df_building_complete['val'].iloc[i] = np.mean(df_building_complete['val'].iloc[i - 48:i])
         df_building_complete.to_csv(f"../data/electricity/{building}_complete.csv", index=False)
 
 
 if __name__ == "__main__":
     # merge_save_electricity()
-    # date from 20230425 to 20230507
-    date_list = [datetime.date(2023, 4, 25) + datetime.timedelta(days=i) for i in range(13)]
-    for date in date_list:
-        merge_electricity_oneday(date)
+    date_end = (datetime.datetime.today() - datetime.timedelta(days=1)).date()
+    date_start = date_end - datetime.timedelta(days=6)
+    for date in pd.date_range(date_start, date_end):
+        print(date)
+        merge_electricity_oneday(date.date())
