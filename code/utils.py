@@ -161,7 +161,7 @@ class dataset_generator:
 # define the network and find the optimal learning rate for the specific task
 class train_api:
     def train_model(self, time_series_dataset, dataloader_train, dataloader_val, hidden_size, rnn_layers,
-                    model_name, min_lr, save_folder_path, epochs_number=200):
+                    model_name, min_lr, save_folder_path, epochs_number=200, daily_train=False):
         trainer = pl.Trainer(gpus=1, gradient_clip_val=1e-1)
         net = DeepAR.from_dataset(
             time_series_dataset, learning_rate=3e-2, hidden_size=hidden_size, rnn_layers=rnn_layers
@@ -200,6 +200,10 @@ class train_api:
         )
         ckpt_path = f"{save_folder_path}/{model_name}.ckpt"
         trainer.save_checkpoint(ckpt_path)
+        if daily_train:
+            daily_path = f"../data/train/daily_train/{model_name}"
+            trainer.save_checkpoint(f"{daily_path}/{model_name}.ckpt")
+
         return net, ckpt_path
 
     def validation_model(self, net, save_folder_path, timeseries_val, dataloader_val, ckpt_path):
