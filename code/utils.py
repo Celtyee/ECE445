@@ -329,6 +329,7 @@ class my_deepAR_model:
             predictions = self.model.predict(pred_dataloader)
             for idx in range(len(self.building_series)):
                 prediction_list = predictions[idx].tolist()
+                building = self.building_series[idx]
                 if sum(prediction_list) < 24:
                     context_2day_ago = np.array(data[prediction_start_idx - 48:prediction_start_idx - 24]["val"])
                     context_1day_ago = np.array(data[prediction_start_idx - 24:prediction_start_idx]["val"])
@@ -339,8 +340,7 @@ class my_deepAR_model:
                     #     print(f"trigger for building 1D at day {d + 1}")
                     #     print(prediction_list)
                 pred_dict[self.building_series[idx]] = pred_dict.get(self.building_series[idx], []) + prediction_list
-                data[prediction_start_idx:prediction_start_idx + 24]["val"] = prediction_list
-
+            # FIXME: attach the prediction result to the corresponding building
             data.to_csv(f"day_{d + 1}_rollback.csv",
                         index=False)  # NOTE: to be commented out if the data is not needed to be saved.
         return pred_dict
