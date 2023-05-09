@@ -161,7 +161,7 @@ class dataset_generator:
 # define the network and find the optimal learning rate for the specific task
 class train_api:
     def train_model(self, time_series_dataset, dataloader_train, dataloader_val, hidden_size, rnn_layers,
-                    model_name, min_lr, save_folder_path):
+                    model_name, min_lr, save_folder_path, epochs_number=200):
         trainer = pl.Trainer(gpus=1, gradient_clip_val=1e-1)
         net = DeepAR.from_dataset(
             time_series_dataset, learning_rate=3e-2, hidden_size=hidden_size, rnn_layers=rnn_layers
@@ -183,7 +183,6 @@ class train_api:
 
         # start train
         early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-4, patience=10, verbose=False, mode="min")
-        epochs_number = 200
         trainer = pl.Trainer(
             max_epochs=epochs_number,
             gpus=1,
@@ -222,12 +221,14 @@ class train_api:
 
 
 class my_deepAR_model:
-    def __init__(self, pl_ckpt, context_length, predictor_length, building):
+    def __init__(self, pl_ckpt, context_length, prediction_len, building):
         self.model = DeepAR.load_from_checkpoint(pl_ckpt)
         self.building_series = building
         self.context_length = context_length
-        self.predictor_length = predictor_length
+        self.prediction_len = prediction_len
+        print(self.prediction_len)
 
+    # NOTE change this will affect the test program.
     def predict(self, csv_data_path):
         '''
         Predict the future electricity usage with the prediction data.
@@ -241,9 +242,9 @@ class my_deepAR_model:
 
         '''
         data = pd.read_csv(csv_data_path)
-        data = data.fillna(method='pad')
-        cutoff = data["time_idx"].max() - self.predictor_length
+        cutoff = data["time_idx"].max() - self.prediction_len
 
+        # NOTE: features needs to be added or removed if the features of training set is changed.
         history = TimeSeriesDataSet(
             data[lambda x: x.index <= cutoff],
             time_idx="time_idx",
@@ -255,13 +256,12 @@ class my_deepAR_model:
                 "Building"
             ],
 
-            # TODO: add is_holiday feature once the new model is trained
-            time_varying_known_reals=["Temperature", "Humidity", "is_weekend"],
+            time_varying_known_reals=["Temperature", "Humidity", "is_weekend", "is_holiday"],
             time_varying_known_categoricals=["Condition"],
             allow_missing_timesteps=True,
             time_varying_unknown_reals=["val"],
             max_encoder_length=self.context_length,
-            max_prediction_length=self.predictor_length
+            max_prediction_length=self.prediction_len
         )
 
         test = TimeSeriesDataSet.from_dataset(history, data, min_prediction_idx=cutoff + 1)
@@ -289,46 +289,56 @@ class my_deepAR_model:
 
         '''
         data = pd.read_csv(input_data_path)
-        data = data.fillna(method='pad')
-        cutoff = data["time_idx"].max() - self.predictor_length
+        cutoff = data["time_idx"].max() - self.prediction_len
 
-        num_days = int(self.predictor_length / 24)
-
-        history = TimeSeriesDataSet(
-            data[lambda x: x.index <= cutoff],
-            time_idx="time_idx",
-            target="val",
-            categorical_encoders={"Building": NaNLabelEncoder().fit(data.Building),
-                                  "Condition": NaNLabelEncoder().fit(data.Condition)},
-            group_ids=["Building"],
-            static_categoricals=[
-                "Building"
-            ],
-
-            # TODO: add is_holiday feature once the new model is trained
-            time_varying_known_reals=["Temperature", "Humidity", "is_weekend"],
-            time_varying_known_categoricals=["Condition"],
-            allow_missing_timesteps=True,
-            time_varying_unknown_reals=["val"],
-            max_encoder_length=self.context_length,
-            max_prediction_length=24
-        )
-        print(self.predictor_length)
+        num_days = int(self.prediction_len / 24)
         pred_dict = {}
-        batch_size = 128
         for d in range(num_days):
+            context_idx = cutoff + d * 24
+            # NOTE: features needs to be added or removed if the features of training set is changed.
+            context = TimeSeriesDataSet(
+                data[lambda x: x.index <= context_idx],
+                time_idx="time_idx",
+                target="val",
+                categorical_encoders={"Building": NaNLabelEncoder().fit(data.Building),
+                                      "Condition": NaNLabelEncoder().fit(data.Condition)},
+                group_ids=["Building"],
+                static_categoricals=[
+                    "Building"
+                ],
+
+                time_varying_known_reals=["Temperature", "Humidity", "is_weekend", "is_holiday"],
+                time_varying_known_categoricals=["Condition"],
+                allow_missing_timesteps=True,
+                time_varying_unknown_reals=["val"],
+                max_encoder_length=self.context_length,
+                max_prediction_length=24
+            )
+            # print(self.predictor_length)
+            batch_size = 128
+            prediction_start_idx = context_idx + 1
             print(f"day: {d}")
-            pred_start = (cutoff + 1) + d * 24
-            prediction_data = TimeSeriesDataSet.from_dataset(history, data, min_prediction_idx=pred_start)
+            prediction_data = TimeSeriesDataSet.from_dataset(context, data, min_prediction_idx=prediction_start_idx)
             pred_dataloader = prediction_data.to_dataloader(train=False, batch_size=batch_size, num_workers=0,
                                                             batch_sampler='synchronized')
 
             predictions = self.model.predict(pred_dataloader)
             for idx in range(len(self.building_series)):
-                data[pred_start:pred_start + 24]["val"] = predictions[idx].tolist()
-                pred_dict[self.building_series[idx]] = pred_dict.get(self.building_series[idx], []) + predictions[
-                    idx].tolist()
+                prediction_list = predictions[idx].tolist()
+                if sum(prediction_list) < 24:
+                    context_2day_ago = np.array(data[prediction_start_idx - 48:prediction_start_idx - 24]["val"])
+                    context_1day_ago = np.array(data[prediction_start_idx - 24:prediction_start_idx]["val"])
+                    #     get the average of two list
+                    prediction_list = (context_2day_ago + context_1day_ago) / 2
+                    prediction_list = prediction_list.tolist()
+                    # if self.building_series[idx] == '1D':
+                    #     print(f"trigger for building 1D at day {d + 1}")
+                    #     print(prediction_list)
+                pred_dict[self.building_series[idx]] = pred_dict.get(self.building_series[idx], []) + prediction_list
+                data[prediction_start_idx:prediction_start_idx + 24]["val"] = prediction_list
 
+            data.to_csv(f"day_{d + 1}_rollback.csv",
+                        index=False)  # NOTE: to be commented out if the data is not needed to be saved.
         return pred_dict
 
 
@@ -343,18 +353,20 @@ class electricity_complete_api:
         Parameters
         ----------
         electricity_sub: the electricity data for a specific date, pandas.dataframe.
+        electricity_sub_date: the date of the data, datetime.date.
 
         Returns
         -------
         the data frame with timestamp that from 0:00 to 23:00 hourly in one day. The lack data value is 0.
         '''
-        # the 0:00 of the date, timezone = UTC
+        # the 0:00 of the date, timezone = UTC.
+        # NOTE: Do not use the min time of the date because the min time is not always 0:00 for a input df.
         zero_time = datetime.datetime.combine(electricity_sub_date, datetime.time(0, 0)).replace(
             tzinfo=datetime.timezone.utc)
         # create a data frame with timestamp that has 24 hours in that date
-        fufill_df = pd.DataFrame(columns=electricity_sub.columns)
+        fulfill_df = pd.DataFrame(columns=electricity_sub.columns)
         for h in range(24):
-            fufill_df = fufill_df.append(
+            fulfill_df = fulfill_df.append(
                 {'time': zero_time + datetime.timedelta(hours=h), 'val': 0},
                 ignore_index=True)
         for idx in range(len(electricity_sub)):
@@ -362,13 +374,24 @@ class electricity_complete_api:
             # turn the datatime into no timezones
             exist_hour = electricity_sub['time'].iloc[idx]
             hours_diff = (exist_hour - zero_time).total_seconds() / 3600
-            fufill_df.iloc[int(hours_diff)] = electricity_sub.iloc[idx]
+            fulfill_df.iloc[int(hours_diff)] = electricity_sub.iloc[idx]
         # electricity_sub.to_csv("electricity_sub.csv", index=False)
         # fufill_df.to_csv("fufill_df.csv", index=False)
-        return fufill_df
+        return fulfill_df
 
-    def complete_electricity(self):
-        buildings = ['1D']
+    def complete_electricity_total(self, buildings=None):
+        '''
+        Complete all the electricity usage data.
+        Parameters
+        ----------
+        buildings
+
+        Returns
+        -------
+
+        '''
+        if buildings is None:
+            buildings = ['1A', '1B', '1C', '1D', '1E', '2A', '2B', '2C', '2D', '2E']
         for building in buildings:
             print(building)
             df = pd.read_csv(f"../data/electricity/{building}.csv")
@@ -383,16 +406,17 @@ class electricity_complete_api:
                 electricity_sub = df[df['time'].dt.date == date]
                 # if the electricity data is incomplete, fulfill the data
                 if len(electricity_sub['time']) < 24:
-                    print(f"incomplete date for date {date}")
-                    fufill_df = self.fetch_blank_data(electricity_sub, date)
+                    # print(f"incomplete date for date {date}")
+                    fulfill_df = self.fetch_blank_data(electricity_sub, date)
                     # remove the electricity_sub from the whole data frame
                     df = df[df['time'].dt.date != date]
-                    df = df.append(fufill_df)
+                    df = df.append(fulfill_df)
                 # sort the data frame by time
             df = df.sort_values(by=['time'])
             df['time'] = pd.to_datetime(df['time']) - datetime.timedelta(hours=7)
+            # NOTE: set the upper bound of the electricity as 500
             # set the 'val' column of the dataframe to nan if it is less than 0 or greater than 1000
-            val_mask = (df['val'] <= 0.0) | (df['val'] >= 50.0)
+            val_mask = (df['val'] <= 0.0) | (df['val'] >= 500.0)
             df.loc[val_mask, 'val'] = np.nan
             # fill the nan with the mean of previous 48 data points
             for i in range(48, len(df)):

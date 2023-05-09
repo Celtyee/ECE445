@@ -46,25 +46,26 @@ class prediction_api:
 
         electricity_path = "../data/electricity"
         future_weather_path = "../data/weather/future"
-        forecast_crawler = visualcrossing_crawler()
-        pred_weather_csv = f'{future_weather_path}/future_weather_{pred_date_start}_{pred_date_end}.csv'
-        if not os.path.exists(pred_weather_csv):
-            forecast_crawler.crawl_forecast(pred_date_start, pred_date_end, pred_weather_csv)
+        vc = visualcrossing_crawler()
+        prediction_weather_csv = f'{future_weather_path}/future_weather_{pred_date_start}_{pred_date_end}.csv'
+        if not os.path.exists(prediction_weather_csv):
+            vc.crawl_forecast(pred_date_start, pred_date_end, prediction_weather_csv)
         future_generator = dataset_generator(future_weather_path, electricity_path)
 
         # # compress the future data. The data will be saved in future_weather_path/future_weather.csv
         # future_generator.compress_weather_data(pred_weather_csv)
-        pred_df_list = future_generator.generate_dataset(buildings, pred_date_start, pred_date_end, pred_weather_csv,
-                                                         start_idx=0, weather_stride=1)
+        pred_df_list = future_generator.generate_dataset(buildings, pred_date_start, pred_date_end,
+                                                         prediction_weather_csv,
+                                                         start_idx=1, weather_stride=1)
 
         # get historical whether data and electricity data
-        history_weather_path = "../data/weather/history"
+        context_weather_path = "../data/weather/history"
 
-        hist_weather_csv = f'{history_weather_path}/history_weather_vc.csv'
-        historical_generator = dataset_generator(history_weather_path, electricity_path)
+        context_weather_csv = f'{context_weather_path}/history_weather_vc.csv'
+        context_generator = dataset_generator(context_weather_path, electricity_path)
 
-        hist_df_list = historical_generator.generate_dataset(buildings, hist_date_start, hist_date_end,
-                                                             hist_weather_csv, start_idx=1, weather_stride=2)
+        hist_df_list = context_generator.generate_dataset(buildings, hist_date_start, hist_date_end,
+                                                          context_weather_csv, start_idx=1, weather_stride=1)
 
         # combine historical data and forecast weather data together as the condition data
         total_df_list = []
@@ -73,15 +74,15 @@ class prediction_api:
             df = pd.concat((hist_df_list[i], pred_df_list[i]), axis=0)
             df['time_idx'] = range(len(df))
             total_df_list.append(df)
-        pred_data = pd.concat(total_df_list)
-        pred_data.fillna(0, inplace=True)
-        pred_data_path = f'{self.input_path}/latest_input_data.csv'
-        pred_data.to_csv(pred_data_path, index=False)
+        input_data = pd.concat(total_df_list)
+        input_data.fillna(0, inplace=True)
+        input_data_path = f'{self.input_path}/latest_input_data.csv'
+        input_data.to_csv(input_data_path, index=False)
 
         # run prediction
-        # print(f'read csv file from {pred_data_path}')
+        # print(f' read csv file from {pred_data_path}')
         model = my_deepAR_model(model_path, 24 * context_len, 24 * prediction_len, buildings)
-        prediction = model.rollback_predict(pred_data_path)
+        prediction = model.rollback_predict(input_data_path)
 
         prediction_path = "./prediction.json"
         with open(prediction_path, "w") as f:
@@ -125,10 +126,10 @@ class prediction_api:
         context_generator = dataset_generator(context_weather, electricity_path)
 
         context_df_list = context_generator.generate_dataset(buildings, hist_date_start, hist_date_end,
-                                                             context_weather_csv, start_idx=1, weather_stride=2)
+                                                             context_weather_csv, start_idx=1, weather_stride=1)
 
         prediction_df_list = context_generator.generate_dataset(buildings, pred_date_start, pred_date_end,
-                                                                context_weather_csv, start_idx=1, weather_stride=2)
+                                                                context_weather_csv, start_idx=1, weather_stride=1)
 
         # combine historical data and forecast weather data together as the input data
         input_df_list = []
@@ -184,8 +185,9 @@ def unit_test():
     context_end_date = prediction_date_start - datetime.timedelta(days=1)
     context_end_date = context_end_date.strftime("%Y%m%d")
     prediction_date_start = prediction_date_start.strftime("%Y%m%d")
-    predictor.custom_prediction(model_path, prediction_date_start, context_end_date, context_len, prediction_len=1)
+    predictor.custom_prediction(model_path, prediction_date_start, context_end_date, context_len, prediction_len=7)
 
 
 if __name__ == "__main__":
     unit_test()
+    pass

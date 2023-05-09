@@ -7,13 +7,13 @@ for i in $(seq 30 2 60); do
 done
 
 rnn_set=()
-for i in $(seq 3 3);do
+for i in $(seq 2 3);do
   # shellcheck disable=SC2206
   rnn_set+=($i)
 done
 
 context_set=()
-for i in $(seq 3 4);do
+for i in $(seq 7 7);do
   context_set+=($((i)))
 done
 

@@ -23,6 +23,7 @@ def train(data, hidden_size, rnn_layer, context_day, prediction_len, min_lr, tas
     context_length = max_encoder_length
     prediction_length = max_prediction_length
 
+    # NOTE: features needs to be added or removed if the features of training set is changed.
     training = TimeSeriesDataSet(
         data[lambda x: x.index <= cutoff],
         time_idx="time_idx",
@@ -80,8 +81,6 @@ def main():
     rnn = args.rnn_layers
     context = args.context_day
 
-    pl_seed = 42
-    pl.seed_everything(pl_seed)
     logger = logging.getLogger(f"train_{args.task_name}")
     logging.basicConfig(filename=f'train_{args.task_name}.txt',
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s-%(funcName)s',
@@ -92,7 +91,7 @@ def main():
     logger.info(f"Pytorch-forecasting={pf.__version__}")
     logger.info(f"Pytorch-lightning={pl.__version__}")
     logger.critical(f"Training starts at {datetime.datetime.now()}")
-    min_lr_list = [10 ** y for y in range(-6, -2)]
+    min_lr_list = [10 ** y for y in range(-3, -2)]
 
     if not os.path.exists(f"../data/train/{args.task_name}"):
         os.mkdir(f"../data/train/{args.task_name}")
@@ -105,7 +104,7 @@ def main():
     for min_lr in min_lr_list:
         # record the hyperparameters
         logger.critical(
-            f"hidden_size={hidden}, rnn_layers={rnn}, context_day={context}, prediction_len = {args.prediction_len}, min_lr={min_lr}, pl_seed = {pl_seed}, task_name = {args.task_name}")
+            f"hidden_size={hidden}, rnn_layers={rnn}, context_day={context}, prediction_len = {args.prediction_len}, min_lr={min_lr}, task_name = {args.task_name}")
         val_loss = train(data, hidden_size=hidden, rnn_layer=rnn, context_day=context, min_lr=min_lr,
                          task_name=args.task_name, prediction_len=args.prediction_len)
         logger.critical(f"loss = {val_loss}")
@@ -114,5 +113,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # RECORD THE HYPERPARAMETERS: hidden=38-rnn_layer=3-context_day=3-min_lr=0.001
     main()

@@ -4,7 +4,7 @@ import pandas as pd
 
 def main():
     api = electricity_complete_api()
-    api.complete_electricity()
+    api.complete_electricity_total()
 
 
 if __name__ == '__main__':

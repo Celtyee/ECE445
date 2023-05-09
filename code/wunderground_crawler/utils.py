@@ -157,7 +157,7 @@ class visualcrossing_crawler:
                                 'humidity': 'Humidity',
                                 'conditions': 'Condition'})
         df.to_csv(csv_save_path, index=False)
-        return csv_save_path
+        return df
 
     def fetch_history(self, start_date, end_date, csv_save_path):
         '''
@@ -216,5 +216,4 @@ class visualcrossing_crawler:
                                 'conditions': 'Condition'})
 
         df.to_csv(csv_save_path, index=False)
-        return csv_save_path
-
+        return df

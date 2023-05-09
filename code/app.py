@@ -58,9 +58,9 @@ def get_prediction_demo(building, time_interval, start_date):
     # reformat the start_date to the format: "%Y%m%d" (e.g. 20190101)
     start_date = start_date.replace('-', '')
 
-    model_path = "./my_model/hidden=28-rnn_layer=2-context_day=30-min_lr=0.0001.ckpt"
+    model_path = "./my_model/hidden=38-rnn_layer=3-context_day=3-min_lr=0.001.ckpt"
     pred_date_start = datetime.datetime.strptime(start_date, "%Y%m%d")
-    num_day_context = 30
+    num_day_context = 3
     weather_start_date = pred_date_start - datetime.timedelta(days=num_day_context + 1)
 
     weather_start_date = weather_start_date.strftime("%Y%m%d")

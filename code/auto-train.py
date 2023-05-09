@@ -8,6 +8,7 @@ import logging
 import datetime
 from generate_train_dataset_buildings import generate_train_dataset_buildings
 import time
+from fetch_weather import fetch_weather_daily
 
 
 def self_train(data, hidden_size, rnn_layer, context_day, prediction_len, min_lr):
@@ -21,6 +22,7 @@ def self_train(data, hidden_size, rnn_layer, context_day, prediction_len, min_lr
     context_length = max_encoder_length
     prediction_length = max_prediction_length
 
+    # NOTE: features needs to be added or removed if the features of training set is changed.
     training = TimeSeriesDataSet(
         data[lambda x: x.index <= cutoff],
         time_idx="time_idx",
@@ -65,15 +67,16 @@ def self_train(data, hidden_size, rnn_layer, context_day, prediction_len, min_lr
 
 
 def auto_train():
+    # hyper-parameters for training
     hidden = 38
     rnn = 3
     context = 3
-    prediction_len = 1
 
+    prediction_len = 1
     pl_seed = 42
     pl.seed_everything(pl_seed)
     logger = logging.getLogger(f"train_auto")
-    logging.basicConfig(filename=f'train_auto.txt',
+    logging.basicConfig(filename=f'train_auto.log',
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s-%(funcName)s',
                         level=logging.INFO,
                         filemode='w')
@@ -99,7 +102,10 @@ def auto_train():
 
 
 if __name__ == "__main__":
-    # RECORD THE HYPERPARAMETERS: hidden=38-rnn_layer=3-context_day=3-min_lr=0.001
+    today = datetime.datetime.today()
+    fetch_weather_daily(today.date())
+
+    generate_train_dataset_buildings(auto_train=True)
     auto_train()
     # sleep for 1 day
-    time.sleep(86400)
+    # time.sleep(86400)
