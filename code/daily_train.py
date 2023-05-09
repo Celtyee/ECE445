@@ -1,79 +1,27 @@
 import os.path
 import pandas as pd
 import pytorch_lightning as pl
-from pytorch_forecasting import TimeSeriesDataSet
-from pytorch_forecasting.data import NaNLabelEncoder
-from utils import train_api
 import logging
 import datetime
 from generate_train_dataset_buildings import generate_train_dataset_buildings
 import time
 from fetch_weather import fetch_weather_daily
 from merge_electricity_data import merge_electricity_oneday
+from test_module import test
+from train import train
 
 logger = logging.getLogger('daily_train')
-
-
-def self_train(data, hidden_size, rnn_layer, context_day, prediction_len, min_lr):
-    # create dataset and dataloaders
-    max_encoder_length = int(24 * context_day)
-    max_prediction_length = int(24 * prediction_len)
-
-    cutoff = data["time_idx"].max() - max_prediction_length
-    # print(training_cutoff)
-
-    context_length = max_encoder_length
-    prediction_length = max_prediction_length
-
-    # NOTE: features needs to be added or removed if the features of training set is changed.
-    training = TimeSeriesDataSet(
-        data[lambda x: x.index <= cutoff],
-        time_idx="time_idx",
-        target="val",
-        categorical_encoders={"Building": NaNLabelEncoder().fit(data.Building),
-                              "Condition": NaNLabelEncoder().fit(data.Condition)},
-        group_ids=["Building"],
-        static_categoricals=[
-            "Building"
-        ],
-
-        time_varying_known_reals=["Temperature", "Humidity", "is_weekend", "is_holiday"],
-        time_varying_known_categoricals=["Condition"],
-        allow_missing_timesteps=True,
-        time_varying_unknown_reals=["val"],
-        max_encoder_length=context_length,
-        max_prediction_length=prediction_length,
-    )
-
-    validation = TimeSeriesDataSet.from_dataset(training, data, min_prediction_idx=cutoff + 1)
-    batch_size = 1024
-
-    # synchronize samples in each batch over time - only necessary for DeepVAR, not for DeepAR
-    train_dataloader = training.to_dataloader(
-        train=True, batch_size=batch_size, num_workers=0, batch_sampler="synchronized"
-    )
-
-    val_dataloader = validation.to_dataloader(
-        train=False, batch_size=batch_size, num_workers=0, batch_sampler="synchronized"
-    )
-    model_name = f"hidden={hidden_size}-rnn_layer={rnn_layer}-context_day={context_day}-min_lr={min_lr}"
-    save_folder_path = "my_model"
-    if not os.path.exists(save_folder_path):
-        os.mkdir(save_folder_path)
-
-    trainer = train_api()
-    net, ckpt_path = trainer.train_model(training, train_dataloader, val_dataloader, hidden_size, rnn_layer,
-                                         model_name,
-                                         min_lr, save_folder_path)
-    loss = trainer.validation_model(net, save_folder_path, validation, val_dataloader, ckpt_path)
-    return loss
+task_name = "daily_train"
+save_folder = f"../data/train/{task_name}"
+if not os.path.exists(save_folder):
+    os.mkdir(save_folder)
 
 
 def daily_train():
     # hyper-parameters for training
-    hidden = 38
-    rnn = 3
-    context = 3
+    hidden_size = 38
+    rnn_layers = 3
+    context_len = 3
 
     prediction_len = 1
     pl_seed = 42
@@ -88,25 +36,29 @@ def daily_train():
     if not os.path.exists("my_model"):
         os.mkdir("my_model")
 
-    train_dataset_path = generate_train_dataset_buildings(daily_train=True)
+    train_dataset_path = generate_train_dataset_buildings(daily_train=True, logger=logger)
     data = pd.read_csv(train_dataset_path)
     data = data.fillna(method="ffill")
     data = data.astype(dict(Building=str))
 
     # record the parameters
     logger.critical(
-        f"hidden_size={hidden}, rnn_layers={rnn}, context_day={context}, prediction_len = {prediction_len}, min_lr={min_lr}, pl_seed = {pl_seed}")
-    val_loss = self_train(data, hidden_size=hidden, rnn_layer=rnn, context_day=context, min_lr=min_lr,
-                          prediction_len=prediction_len)
+        f"hidden_size={hidden_size}, rnn_layers={rnn_layers}, context_day={context_len}, prediction_len = {prediction_len}, min_lr={min_lr}, pl_seed = {pl_seed}")
+    val_loss = train(data, hidden_size=hidden_size, rnn_layer=rnn_layers, context_day=context_len, min_lr=min_lr,
+                     prediction_len=prediction_len, task_name=task_name)
     logger.critical(f"loss = {val_loss}")
 
     logger.info("Train finish\n")
+
+    model_name = f"hidden={hidden_size}-rnn_layer={rnn_layers}-context_day={context_len}-min_lr={min_lr}"
+    return model_name
 
 
 if __name__ == "__main__":
     fetch_date = datetime.datetime.today() - datetime.timedelta(days=1)
     fetch_weather_daily(fetch_date.date())
     merge_electricity_oneday(fetch_date.date())
-    daily_train()
+    model_name = daily_train()
+    test(model_name=model_name, task_name=task_name, prediction_len=1)
     # sleep for 1 day
     # time.sleep(86400)

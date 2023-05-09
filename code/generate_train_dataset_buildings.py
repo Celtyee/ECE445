@@ -1,11 +1,11 @@
 import os.path
-
+import logging
 from utils import dataset_generator
 import datetime
 import pandas as pd
 
 
-def generate_train_dataset_buildings(daily_train=False):
+def generate_train_dataset_buildings(daily_train=False, logger=None):
     train_path = "../data/train"
     if not os.path.exists(train_path):
         os.makedirs(train_path)
@@ -16,11 +16,13 @@ def generate_train_dataset_buildings(daily_train=False):
 
     generator = dataset_generator(weather_path, electricity_path)
     buildings = ['1A', '1B', '1C', '1D', '1E', '2A', '2B', '2C', '2D', '2E']
-    start_date = datetime.datetime.strptime("20220101", "%Y%m%d").date()
+    start_date = datetime.datetime.strptime("20211101", "%Y%m%d").date()
     if daily_train:
         end_date = datetime.datetime.today().date() - datetime.timedelta(days=8)
     else:
         end_date = datetime.datetime.strptime("20230430", "%Y%m%d").date()
+    if logger is not None:
+        logger.info(f"The training set is from {start_date} to {end_date}.\n")
     print(f"The training set is from {start_date} to {end_date}.\n")
     train_df_list = generator.generate_dataset(buildings, start_date, end_date, whole_weather_path, start_idx=1,
                                                weather_stride=1)

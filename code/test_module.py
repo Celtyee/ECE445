@@ -76,21 +76,6 @@ def test(model_name, task_name, prediction_len):
         # end_date = start_date + datetime.timedelta(days=prediction_len - 1)
         for idx in range(len(buildings)):
             building = buildings[idx]
-            # building_path = f"../data/electricity/{building}.csv"
-            # df_electricity = pd.read_csv(building_path)
-            # df_electricity['time'] = pd.to_datetime(df_electricity['time']) - datetime.timedelta(hours=1)
-            # df_electricity['time'] = pd.to_datetime(df_electricity['time']) + datetime.timedelta(hours=8)
-            #
-            # mask_ele = (df_electricity['time'].dt.date >= start_date.date()) & (
-            #         df_electricity['time'].dt.date <= end_date.date())
-            # df_electricity = df_electricity.loc[mask_ele]
-            # # set the value <= 0 as the previous value
-            # val_mask = df_electricity['val'] <= 0
-            # df_electricity.loc[val_mask, 'val'] = np.nan
-            # # fill the nan with the previous value
-            # df_electricity = df_electricity.fillna(method="ffill")
-            # usage_y = df_electricity[mask_ele]['val'][:]
-            # usage_y = np.array(usage_y)[:24 * prediction_len]
             usage_y = np.array(original_buildings[building])
             usage_pred = np.array(prediction_result[building])
             test_y[idx, i, :] = usage_y
@@ -112,6 +97,10 @@ def test(model_name, task_name, prediction_len):
 
     # draw the graph of the RMSE, MAPE, MAE for 10 buildings
     metrics_list = ["RMSE", "MAPE", "MAE"]
+    task_save_path = f"../data/test/{task_name}"
+    if not os.path.exists(task_save_path):
+        os.makedirs(task_save_path)
+
     test_folder_path = f"../data/test/{task_name}/{model_name}"
     if not os.path.exists(test_folder_path):
         os.makedirs(test_folder_path)
@@ -137,7 +126,4 @@ if __name__ == "__main__":
     model_name = sys.argv[1]
     task_name = sys.argv[2]
     prediction_len = sys.argv[3]
-    task_save_path = f"../data/test/{task_name}"
-    if not os.path.exists(task_save_path):
-        os.makedirs(task_save_path)
     test(model_name, task_name, int(prediction_len))
