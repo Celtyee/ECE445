@@ -8,10 +8,6 @@ from flask_cors import CORS, cross_origin
 
 from prediction_api import prediction_api
 
-
-
-
-
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
@@ -57,11 +53,10 @@ def get_prediction(building, time_interval):
 def get_prediction_demo(building, time_interval, start_date):
     # reformat the start_date to the format: "%Y%m%d" (e.g. 20190101)
     start_date = start_date.replace('-', '')
-
-    model_path = "./my_model/hidden=38-rnn_layer=3-context_day=3-min_lr=0.001.ckpt"
+    num_day_context = 7
+    model_path = f"./my_model/hidden=38-rnn_layer=3-context_day={num_day_context}-min_lr=0.001.ckpt"
     pred_date_start = datetime.datetime.strptime(start_date, "%Y%m%d")
-    num_day_context = 3
-    weather_start_date = pred_date_start - datetime.timedelta(days=num_day_context + 1)
+    weather_start_date = pred_date_start - datetime.timedelta(days=1)
 
     weather_start_date = weather_start_date.strftime("%Y%m%d")
     pred_date_start = pred_date_start.strftime("%Y%m%d")
