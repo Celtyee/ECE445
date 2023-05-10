@@ -48,7 +48,7 @@ def merge_electricity_oneday(input_date):
     completeAPI = electricity_complete_api()
     for building in buildings:
         csv_name = f"v.building.A00{building}.elec.hourly+{select_date}.csv"
-        print(csv_name)
+        # print(csv_name)
         csv_path = f"../DataCollector/target/file/{csv_name}"
         # if not os.path.exists(csv_path):
         #     continue

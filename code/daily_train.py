@@ -61,4 +61,4 @@ if __name__ == "__main__":
     model_name = daily_train()
     test(model_name=model_name, task_name=task_name, prediction_len=1)
     # sleep for 1 day
-    # time.sleep(86400)
+    time.sleep(86400)

@@ -230,7 +230,7 @@ class my_deepAR_model:
         self.building_series = building
         self.context_length = context_length
         self.prediction_len = prediction_len
-        print(self.prediction_len)
+        # print(self.prediction_len)
 
     # NOTE change this will affect the test program.
     def predict(self, csv_data_path):
