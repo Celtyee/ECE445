@@ -293,8 +293,8 @@ class my_deepAR_model:
 
         '''
         data = pd.read_csv(input_data_path)
+        input_len = int(len(data) / len(self.building_series))
         cutoff = data["time_idx"].max() - self.prediction_len
-
         num_days = int(self.prediction_len / 24)
         pred_dict = {}
         for d in range(num_days):
@@ -320,27 +320,27 @@ class my_deepAR_model:
             )
             # print(self.predictor_length)
             batch_size = 128
-            prediction_start_idx = context_idx + 1
             print(f"day: {d}")
-            prediction_data = TimeSeriesDataSet.from_dataset(context, data, min_prediction_idx=prediction_start_idx)
+            prediction_data = TimeSeriesDataSet.from_dataset(context, data, min_prediction_idx=context_idx + 1)
             pred_dataloader = prediction_data.to_dataloader(train=False, batch_size=batch_size, num_workers=0,
                                                             batch_sampler='synchronized')
 
             predictions = self.model.predict(pred_dataloader)
+            # Set the prediction as the input for prediction in the next iteration.
             for idx in range(len(self.building_series)):
+                prediction_start_idx = idx * input_len + context_idx + 1
                 prediction_list = predictions[idx].tolist()
-                building = self.building_series[idx]
                 if sum(prediction_list) < 24:
                     context_2day_ago = np.array(data[prediction_start_idx - 48:prediction_start_idx - 24]["val"])
                     context_1day_ago = np.array(data[prediction_start_idx - 24:prediction_start_idx]["val"])
                     #     get the average of two list
                     prediction_list = (context_2day_ago + context_1day_ago) / 2
                     prediction_list = prediction_list.tolist()
-                    # if self.building_series[idx] == '1D':
-                    #     print(f"trigger for building 1D at day {d + 1}")
-                    #     print(prediction_list)
+                # if self.building_series[idx] == '1D':
+                #     print(f"trigger for building 1D at day {d + 1}")
+                #     print(prediction_list)
                 pred_dict[self.building_series[idx]] = pred_dict.get(self.building_series[idx], []) + prediction_list
-            # FIXME: attach the prediction result to the corresponding building
+                data[prediction_start_idx:prediction_start_idx + 24]['val'] = prediction_list
             data.to_csv(f"day_{d + 1}_rollback.csv",
                         index=False)  # NOTE: to be commented out if the data is not needed to be saved.
         return pred_dict

@@ -179,7 +179,7 @@ class prediction_api:
 def unit_test():
     predictor = prediction_api()
     model_path = "./my_model/hidden=38-rnn_layer=3-context_day=3-min_lr=0.001.ckpt"
-    prediction_date_start = datetime.datetime.strptime("20221101", "%Y%m%d")
+    prediction_date_start = datetime.datetime.strptime("20230302", "%Y%m%d")
     context_len = 3
     context_end_date = prediction_date_start - datetime.timedelta(days=1)
     context_end_date = context_end_date.strftime("%Y%m%d")
