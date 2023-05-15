@@ -16,7 +16,7 @@ def generate_train_dataset_buildings(daily_train=False, logger=None):
 
     generator = dataset_generator(weather_path, electricity_path)
     buildings = ['1A', '1B', '1C', '1D', '1E', '2A', '2B', '2C', '2D', '2E']
-    start_date = datetime.datetime.strptime("20211101", "%Y%m%d").date()
+    start_date = datetime.datetime.strptime("20200801", "%Y%m%d").date()
     if daily_train:
         end_date = datetime.datetime.today().date() - datetime.timedelta(days=8)
     else:

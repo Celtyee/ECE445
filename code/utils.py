@@ -322,7 +322,7 @@ class my_deepAR_model:
             batch_size = 128
             print(f"day: {d}")
             prediction_data = TimeSeriesDataSet.from_dataset(context, data, min_prediction_idx=context_idx + 1)
-            pred_dataloader = prediction_data.to_dataloader(train=False, batch_size=batch_size, num_workers=0,
+            pred_dataloader = prediction_data.to_dataloader(train=False, batch_size=batch_size, num_workers=4,
                                                             batch_sampler='synchronized')
 
             predictions = self.model.predict(pred_dataloader)
@@ -341,8 +341,8 @@ class my_deepAR_model:
                 #     print(prediction_list)
                 pred_dict[self.building_series[idx]] = pred_dict.get(self.building_series[idx], []) + prediction_list
                 data[prediction_start_idx:prediction_start_idx + 24]['val'] = prediction_list
-            data.to_csv(f"day_{d + 1}_rollback.csv",
-                        index=False)  # NOTE: to be commented out if the data is not needed to be saved.
+            # data.to_csv(f"day_{d + 1}_rollback.csv",
+            #             index=False)  # NOTE: to be commented out if the data is not needed to be saved.
         return pred_dict
 
 

@@ -9,6 +9,7 @@ from fetch_weather import fetch_weather_daily
 from merge_electricity_data import merge_electricity_oneday
 from test_module import test
 from train import train
+from shutil import copyfile
 
 logger = logging.getLogger('daily_train')
 task_name = "daily_train"
@@ -17,13 +18,8 @@ if not os.path.exists(save_folder):
     os.mkdir(save_folder)
 
 
-def daily_train():
+def daily_train(hidden_size, rnn_layers, context_len, prediction_len):
     # hyper-parameters for training
-    hidden_size = 38
-    rnn_layers = 3
-    context_len = 3
-
-    prediction_len = 1
     pl_seed = 42
     pl.seed_everything(pl_seed)
     logging.basicConfig(filename='daily_train.log',
@@ -55,10 +51,22 @@ def daily_train():
 
 
 if __name__ == "__main__":
+    hidden_size = 38
+    rnn_layers = 3
+    context_len = 7
+    # NOTE: change for training process
+    prediction_len = 7
     fetch_date = datetime.datetime.today() - datetime.timedelta(days=1)
     fetch_weather_daily(fetch_date.date())
     merge_electricity_oneday(fetch_date.date())
-    model_name = daily_train()
-    test(model_name=model_name, task_name=task_name, prediction_len=1)
+    model_name = daily_train(hidden_size, rnn_layers, context_len, prediction_len)
+    trained_model_path = f"../data/train/{task_name}/{model_name}/{model_name}.ckpt"
+    print(trained_model_path)
+    if not os.path.exists("my_model"):
+        os.mkdir("my_model")
+    # copy the trained model back to my model folder
+    copyfile(trained_model_path, f"my_model/{model_name}.ckpt")
+    # NOTE: change for testing process
+    test(model_name=model_name, task_name=task_name, prediction_len=7, rollback=False)
     # sleep for 1 day
     time.sleep(86400)

@@ -91,7 +91,7 @@ class prediction_api:
         return prediction
 
     def custom_prediction(self, model_path, pred_date, context_end, context_len, prediction_len=7,
-                          buildings=None, eval_model=False) -> (dict, dict):
+                          buildings=None, rollback=False) -> (dict, dict):
         '''
         allow users to use custom weather as the input data for the prediction of the start day.
         The prediction result is stored in the file history_prediction.json.
@@ -143,7 +143,7 @@ class prediction_api:
         input_df.to_csv(input_data, index=False)
         # run prediction
         model = my_deepAR_model(model_path, 24 * context_len, 24 * prediction_len, buildings)
-        if eval_model:
+        if not rollback:
             prediction = model.predict(input_data)
         else:
             prediction = model.rollback_predict(input_data)

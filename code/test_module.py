@@ -9,7 +9,7 @@ import logging
 import matplotlib.pyplot as plt
 
 
-def test(model_name, task_name, prediction_len):
+def test(model_name, task_name, prediction_len, rollback: bool):
     '''
     Test the performance of model on the test data set from 20210315 - 20210430
     Parameters
@@ -70,7 +70,7 @@ def test(model_name, task_name, prediction_len):
         context_end_date = context_end_date.strftime("%Y%m%d")
         prediction_result, original_buildings = prediction.custom_prediction(model_path, pred_day, context_end_date,
                                                                              context_len,
-                                                                             prediction_len, eval_model=True)
+                                                                             prediction_len, rollback=rollback)
         # set the logger name as "metrics"
         # start_date = datetime.datetime.strptime(pred_day, "%Y%m%d")
         # end_date = start_date + datetime.timedelta(days=prediction_len - 1)
@@ -81,45 +81,45 @@ def test(model_name, task_name, prediction_len):
             test_y[idx, i, :] = usage_y
             test_pred[idx, i, :] = usage_pred
 
-    for idx in range(len(buildings)):
-        # flatten the last two dimension
-        building_test_y = test_y[idx, :, :].flatten()
-        building_test_pred = test_pred[idx, :, :].flatten()
-        # calculate the RMSE, MAPE, MAE
-        # print(buildings[idx])
-        # print(building_test_y)
-        # print("\n\n")
-        # print(building_test_pred)
-        rmse = np.sqrt(mean_squared_error(building_test_y, building_test_pred))
-        mape = np.mean(np.abs((building_test_y - building_test_pred) / building_test_y)) * 100
-        mae = mean_absolute_error(building_test_y, building_test_pred)
-        metrics_mat[idx, :] = [rmse, mape, mae]
+        for idx in range(len(buildings)):
+            # flatten the last two dimension
+            building_test_y = test_y[idx, :, :].flatten()
+            building_test_pred = test_pred[idx, :, :].flatten()
+            # calculate the RMSE, MAPE, MAE
+            # print(buildings[idx])
+            # print(building_test_y)
+            # print("\n\n")
+            # print(building_test_pred)
+            rmse = np.sqrt(mean_squared_error(building_test_y, building_test_pred))
+            mape = np.mean(np.abs((building_test_y - building_test_pred) / building_test_y)) * 100
+            mae = mean_absolute_error(building_test_y, building_test_pred)
+            metrics_mat[idx, :] = [rmse, mape, mae]
 
-    # draw the graph of the RMSE, MAPE, MAE for 10 buildings
-    metrics_list = ["RMSE", "MAPE", "MAE"]
-    task_save_path = f"../data/test/{task_name}"
-    if not os.path.exists(task_save_path):
-        os.makedirs(task_save_path)
+        # draw the graph of the RMSE, MAPE, MAE for 10 buildings
+        metrics_list = ["RMSE", "MAPE", "MAE"]
+        task_save_path = f"../data/test/{task_name}"
+        if not os.path.exists(task_save_path):
+            os.makedirs(task_save_path)
 
-    test_folder_path = f"../data/test/{task_name}/{model_name}"
-    if not os.path.exists(test_folder_path):
-        os.makedirs(test_folder_path)
+        test_folder_path = f"../data/test/{task_name}/{model_name}"
+        if not os.path.exists(test_folder_path):
+            os.makedirs(test_folder_path)
 
-    # draw the graph for each metrics on 10 buildings
-    for m in range(len(metrics_list)):
-        plt.figure()
-        plt.plot(buildings, metrics_mat[:, m], label=metrics_list[m])
-        # show the data point on the graph
-        for i in range(len(buildings)):
-            plt.scatter(i, metrics_mat[i, m], c="black")
-            plt.annotate(metrics_mat[i, m], (i, metrics_mat[i, m]))
-        # set the title, xlabel, ylabel, legend, grid
-        plt.title(f"{metrics_list[m]}")
-        plt.xlabel("Prediction Day")
-        plt.ylabel("Value")
-        plt.legend()
-        plt.grid()
-        plt.savefig(f"{test_folder_path}/{metrics_list[m]}.png")
+        # draw the graph for each metrics on 10 buildings
+        for m in range(len(metrics_list)):
+            plt.figure()
+            plt.plot(buildings, metrics_mat[:, m], label=metrics_list[m])
+            # show the data point on the graph
+            for b_i in range(len(buildings)):
+                plt.scatter(b_i, metrics_mat[b_i, m], c="black")
+                plt.annotate(metrics_mat[b_i, m], (b_i, metrics_mat[b_i, m]))
+            # set the title, xlabel, ylabel, legend, grid
+            plt.title(f"{metrics_list[m]}")
+            plt.xlabel("Prediction Day")
+            plt.ylabel("Value")
+            plt.legend()
+            plt.grid()
+            plt.savefig(f"{test_folder_path}/{metrics_list[m]}.png")
 
 
 if __name__ == "__main__":

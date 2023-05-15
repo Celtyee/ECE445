@@ -70,11 +70,11 @@ def get_prediction_demo(building, time_interval, start_date):
         predictor = prediction_api()
         predictor.custom_prediction(model_path, pred_date_start, weather_start_date, num_day_context)
 
-    # read in a json file named "./data/output/prediction-pred_date={pred_date_start}-weather_date={weather_start_date}.json"
+    # read in a json file named "../data/output/prediction-pred_date={pred_date_start}-weather_date={weather_start_date}.json"
     json_path = "../data/output/prediction-pred_date=" + pred_date_start + ".json"
     with open(json_path, 'r') as f:
         prediction = json.load(f)
-    # read in a json file named "./data/output/origin-pred_date={pred_date_start}-weather_date={weather_start_date}.json"
+    # read in a json file named "../data/output/origin-pred_date={pred_date_start}-weather_date={weather_start_date}.json"
     json_path = "../data/output/origin-pred_date=" + pred_date_start + ".json"
     with open(json_path, 'r') as f:
         origin = json.load(f)
@@ -91,6 +91,27 @@ def get_prediction_demo(building, time_interval, start_date):
         origin = {i: origin[building][i] for i in range(24 * 7)}
     else:
         return 'Invalid time interval'
+
+    return json.dumps({'prediction': prediction, 'real': origin})
+
+@app.route('/public_dataset/<family_id>/<time_interval>/<start_date>')
+def get_public_prediction(family_id, time_interval, start_date):
+    # read from a json file named "../data/public_dataset/deepAR/demo/labels-demo.json"
+    json_path = "../data/public_dataset/deepAR/demo/labels-demo.json"
+    with open(json_path, 'r') as f:
+        real_data = json.load(f)
+    # read from a json file named "../data/public_dataset/deepAR/demo/prediction_result-demo.json"
+    json_path = "../data/public_dataset/deepAR/demo/prediction_result-demo.json"
+    with open(json_path, 'r') as f:
+        predicted_data = json.load(f)
+
+    # convert family_id to int
+    family_id = int(family_id)
+
+    # return the prediction and origin for the specified building and time interval in the format of a json string
+    if time_interval == '24hours':
+        prediction = {i: predicted_data[start_date][family_id][i] for i in range(24)}
+        origin = {i: real_data[start_date][family_id][i] for i in range(24)}
 
     return json.dumps({'prediction': prediction, 'real': origin})
 
