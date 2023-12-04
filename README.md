@@ -2,6 +2,8 @@
 
 This is the repo. for my SDP: electricity forecast (ELF) device.
 
+Algorithm: AutoRegressive.
+
 Make sure anaconda is installed on your machine.
 
 Proxy is required on PORT 7890, otherwise you can set the _**port**_ parameter of weather_crawler.
